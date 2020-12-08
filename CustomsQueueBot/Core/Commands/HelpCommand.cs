@@ -28,7 +28,7 @@ namespace CustomsQueueBot.Core.Commands
                 var embed = new EmbedBuilder()
                 {
                     Color = new Color(004, 137, 218),   //random colors for funsies.
-                    Description = "These are the commands that can be use."
+                    Description = "Here are the commands. Use help [command] for more information on the command."
                 };
 
                 foreach (var module in _Service.Modules)

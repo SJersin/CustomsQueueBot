@@ -64,7 +64,6 @@ namespace CustomsQueueBot.Core.Commands
         [Alias("playerlist")]
         [Summary("Shows all players in the playerlist.")]
         //    [RequireUserPermission(GuildPermission.ManageChannels)]
-
         public async Task ShowPlayerList()
         {
             await Context.Channel.TriggerTypingAsync();
@@ -95,6 +94,8 @@ namespace CustomsQueueBot.Core.Commands
                 }
                 foreach (EmbedFieldBuilder field in PlayerListField)
                     embed.AddField(field);
+
+                embed.WithTitle($"There are {PlayerList.Playerlist.Count()} players in the list.");
             }
 
             // Console.WriteLine($"{DateTime.Now} => [QUEUE_EVENT: Debug] : List of names: {names}");
