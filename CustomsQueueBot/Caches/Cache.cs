@@ -5,8 +5,9 @@ using System.Text;
 
 namespace CustomsQueueBot.Caches
 {
-    public class Cache
+    public class IsOpen
     {
+        public static bool isOpen { get; set; } = false;
     }
 
     public class ReactionMessages
