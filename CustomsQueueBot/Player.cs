@@ -13,6 +13,7 @@ namespace CustomsQueueBot
         private int elo;
         private ulong discordID;
         private bool isActive;
+        private int playerLevel;
 
         public Player()
         {
@@ -22,19 +23,21 @@ namespace CustomsQueueBot
             elo = 0;
             discordID = 0;
             isActive = true;
+            playerLevel = 0;
         }
-        public ulong DiscordID { get; set; }
-        public string Nickname { get; set; }
-        public string IGN { get; set; }
-        public int GamesPlayed { get; set; }
-        public int Elo { get; set; }
-        public bool IsActive { get; set; }
-
+        public ulong DiscordID { get => discordID; set => discordID = value; }
+        public string Nickname { get => nickname; set => nickname = value; }
+        public string IGN { get => ign; set => ign = value; }
+        public int GamesPlayed { get => gamesPlayed; set => gamesPlayed = value; }
+        public int Elo { get => elo; set => elo = value; }
+        public bool IsActive { get => isActive; set => isActive = value; }
+        public int PlayerLevel { get => playerLevel; set => playerLevel = value; }
     }
 
     // Global Player class List 
     public class PlayerList
     {
         public static List<Player> Playerlist { get; set; } = new List<Player>();
+        public static List<Player> PlayerlistDB { get; set; } = new List<Player>();
     }
 }
