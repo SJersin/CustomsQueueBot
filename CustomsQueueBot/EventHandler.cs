@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -34,7 +35,7 @@ namespace CustomsQueueBot
 
         private async Task Ready_Event()
         {
-            // Console.WriteLine($"{Client.CurrentUser.Username} is ready."); // $ is String Injection... gotta look that up.
+
             Console.WriteLine($"{DateTime.Now} => [READY_EVENT] : {Client.CurrentUser.Username} is ready."); // Remember, consistancy is ImPoRtAnT.
             await Client.SetGameAsync($"{Config.bot.prefix}help"); // Shows the prefix and "help" under Username.
             await Client.SetStatusAsync(UserStatus.Online); //Set the bot as online (enumerator)
@@ -84,22 +85,24 @@ namespace CustomsQueueBot
                 {
                     if (player.DiscordID == user.Id)
                     {
-                        exists = true; 
+                        exists = true;
                         Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
                         player.IsActive = true;
                     }
                 }
-                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: ForEach iteration active.");
-                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Check for player: {user.Username}: {user.Id}.");
-                    if (!exists)
-                    {
-                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player not found. Creating player.");
-                        Player newPlayer = new Player();
-                        newPlayer.DiscordID = user.Id;
-                        newPlayer.Nickname = user.Username;
-                        newPlayer.IsActive = true;
-                        PlayerList.Playerlist.Add(newPlayer);
-                    }
+                Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: ForEach iteration active.");
+                Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Check for player: {user.Username}: {user.Id}.");
+                if (!exists)
+                {
+                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player not found. Creating player.");
+                    Player newPlayer = new Player();
+                    newPlayer.DiscordID = user.Id;
+                    newPlayer.Nickname = user.Username;
+                    newPlayer.IsActive = true;
+                    PlayerList.Playerlist.Add(newPlayer);
+                    if (!PlayerList.PlayerlistDB.Contains(newPlayer))
+                        PlayerList.PlayerlistDB.Add(newPlayer);
+                }
             }
             else
             {
@@ -109,6 +112,8 @@ namespace CustomsQueueBot
                 player.Nickname = user.Username;
                 player.IsActive = true;
                 PlayerList.Playerlist.Add(player);
+                if (!PlayerList.PlayerlistDB.Contains(player))
+                    PlayerList.PlayerlistDB.Add(player);
                 Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: New player {player.Nickname} successfully added.");
             }
 
@@ -127,7 +132,6 @@ namespace CustomsQueueBot
             //userMessage.id is the id of the message the user is reacting to
             //Check if the message the user is reacting to is a valid reaction message
             //If valid, the message id should exist in our ReactionMessages collection
-            //Valid reaction messages are the only message that should assign or remove roles
             if (Caches.ReactionMessages.ReactionMessage == userMessage.Id)
             {
                 var user = reaction.User.Value;
@@ -138,28 +142,13 @@ namespace CustomsQueueBot
                     {
                         Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: Player found. Switching to inactive.");
                         player.IsActive = false;
+
+                        PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
                     }
                 }
-
-
-                //The unicode string (👍 and 👎) is used when comparing Discord emojis
-                //    if (reaction.Emote.Name.Equals("👍"))
-                //Retrieve the "good role" from the guild, using the role id
-                //        role = channel.Guild.GetRole(123456789) as SocketGuildChannel;
-                //    else reaction.Emote.Name.Equals("👎") Then
-                //Retrieve the "bad role" from the guild, using the role id
-                //        role = DirectCast(channel, SocketGuildChannel).Guild.GetRole(987654321)
-
-
-                // If the role was found within the guild and the user currently has the role assigned, remove the role from the user
-                // if (role != Nothing && user.Roles.Any Then Await user.RemoveRoleAsync(role)
             }
         }
-
-
-
     }
-
 }
 
 

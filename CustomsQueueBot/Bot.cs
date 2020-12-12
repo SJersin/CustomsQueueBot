@@ -70,7 +70,7 @@ namespace CustomsQueueBot
             await Client.LoginAsync(TokenType.Bot, Config.bot.token);
             await Client.StartAsync();
             await Task.Delay(Timeout.Infinite); //Time for tasks to run. -1 is unlimited time. Timeout.Infinite has clearer intent.
-          
+
         }
 
         private Task Client_Log(LogMessage message)
