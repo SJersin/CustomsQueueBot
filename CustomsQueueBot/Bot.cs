@@ -52,14 +52,14 @@ namespace CustomsQueueBot
             if (string.IsNullOrWhiteSpace(Config.bot.token))    // Check for bot's token. Same thing as: if (Config.bot.token == "" || Config.bot.token == null) return;
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
-                Console.WriteLine("The bot's token is not set. Set the token in the config file.");
+                Console.WriteLine("The bot's token is not set. Set the token in the config file located in the \\Resources\\ directory.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Config.bot.prefix))    // Check for bot's prefix.
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
-                Console.WriteLine("The bot's prefix is not set. Set the prefix in the config file.");
+                Console.WriteLine("The bot's prefix is not set. Set the prefix in the config file located in the \\Resources\\ directory.");
                 return;
             }
             else
@@ -70,19 +70,18 @@ namespace CustomsQueueBot
             await Client.LoginAsync(TokenType.Bot, Config.bot.token);
             await Client.StartAsync();
             await Task.Delay(Timeout.Infinite); //Time for tasks to run. -1 is unlimited time. Timeout.Infinite has clearer intent.
-          
+
         }
 
         private Task Client_Log(LogMessage message)
         {
             // Console.WriteLine($"{DateTime.Now} at {message.Source}: {message.Message}");  //Consistancy is important I guess.
-            Console.WriteLine($"{DateTime.Now} => [{message.Source}] : {message.Message}");
+            if (message.Message != "Received Dispatch (PRESENCE_UPDATE)")
+                if(message.Message != "Received Dispatch (TYPING_START)")
+                    if(message.Message != "Received Dispatch (MESSAGE_CREATE)")
+                        Console.WriteLine($"{DateTime.Now} => [{message.Source}] : {message.Message}");
             return Task.CompletedTask;
         }
-
-
-
-
 
         private ServiceProvider BuildServiceProvider()
         {
@@ -91,6 +90,10 @@ namespace CustomsQueueBot
                 .AddSingleton(Commands)
                 .BuildServiceProvider();
         }
+
+        
+
+
     }
 }
 
