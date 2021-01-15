@@ -1,8 +1,14 @@
 ﻿/*
-    Configuration of the bot creating or reading the json file
-    that will contain the the bots Authentication Token and
-    the command prefix to call on the bot's functions.
-*/
+ *
+ *  Configuration of the bot creating or reading the json file
+ *  that will contain the bot's:
+ *  
+ *    -Authentication Token 
+ *    -Command prefix to call on the bot's functions
+ *    -Unicode reaction emoji or emote string name
+ *    -Group size integer for default number of players
+ *
+ */
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -41,7 +47,7 @@ namespace CustomsQueueBot
         public string token { get; set; }
         public string prefix { get; set; }
         public string reaction { get; set; }
-        public string webhook { get; set; }
+        public int groupsize { get; set; }
 
     }
 }

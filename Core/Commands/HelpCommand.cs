@@ -67,7 +67,7 @@ namespace CustomsQueueBot.Core.Commands
                 var embed = new EmbedBuilder()
                 {
                     Color = new Color(114, 137, 218),
-                    Description = $"Here are commands like **{command}**"
+                    Description = $"Here are the **{command}** commands."
                 };
 
                 foreach (var match in result.Commands)
