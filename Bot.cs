@@ -25,7 +25,7 @@ namespace CustomsQueueBot
             {
                 LogLevel = LogSeverity.Debug,
                 AlwaysDownloadUsers = true,
-                MessageCacheSize = 20
+                MessageCacheSize = 100
             });
 
             Commands = new CommandService(new CommandServiceConfig
@@ -53,6 +53,7 @@ namespace CustomsQueueBot
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
                 Console.WriteLine("The bot's token is not set. Set the token in the config file located in the \\Resources\\ directory.");
+                Console.Read();
                 return;
             }
 
@@ -60,6 +61,7 @@ namespace CustomsQueueBot
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
                 Console.WriteLine("The bot's prefix is not set. Set the prefix in the config file located in the \\Resources\\ directory.");
+                Console.Read();
                 return;
             }
             else
@@ -89,11 +91,7 @@ namespace CustomsQueueBot
                 .AddSingleton(Client)
                 .AddSingleton(Commands)
                 .BuildServiceProvider();
-        }
-
-        
-
-
+        }                
     }
 }
 

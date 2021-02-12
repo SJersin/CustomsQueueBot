@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Discord;
 using Discord.Commands;
@@ -25,9 +25,9 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task ChangeActiveStatus(string userID = "")
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
-                await Context.Channel.SendMessageAsync("There is no open queue.");
+                await Context.Channel.SendMessageAsync("There is no open q-υωυ-e, silly.");
                 return;
             }
             IUser user;
@@ -58,7 +58,7 @@ namespace CustomsQueueBot.Core.Commands
                         player.IsActive = false;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
                         await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateList();
+                        await UpdateMethods.Update.PlayerList();
                         return;
                     }
                     else
@@ -66,7 +66,7 @@ namespace CustomsQueueBot.Core.Commands
                         player.IsActive = true;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = true;
                         await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateList();
+                        await UpdateMethods.Update.PlayerList();
                         return;
 
                     }
@@ -83,7 +83,7 @@ namespace CustomsQueueBot.Core.Commands
         {
             ulong _id;
             SocketGuildUser _user;
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -129,7 +129,8 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             Player player1 = new Player();
-            player1.Nickname = _user.Username;
+            player1.DiscordName = _user.Username;
+            player1.Nickname = _user.Nickname;
             player1.DiscordID = _user.Id;
             player1.IsActive = isActive;
 
@@ -137,7 +138,7 @@ namespace CustomsQueueBot.Core.Commands
             PlayerList.PlayerlistDB.Add(player1);
 
             await Context.Channel.SendMessageAsync($"{player1.Nickname} has been added to the queue.");
-            await UpdateList();
+            await UpdateMethods.Update.PlayerList();
         }
 
         [Command("remove")]
@@ -147,7 +148,7 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task RemovePlayer(string userID, [Remainder] string reason = "")
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -177,7 +178,7 @@ namespace CustomsQueueBot.Core.Commands
                     PlayerList.PlayerlistDB.Remove(player);
                     embed.WithDescription($"{player.Nickname} has been removed from the queue.\nReason: {reason}")
                         .WithColor(Color.DarkRed);
-                    await _user.SendMessageAsync($"You have been removed from the queue.\nReason: {reason}");
+                //    await _user.SendMessageAsync($"You have been removed from the queue.\nReason: {reason}");
                     break;
                 }
                 else
@@ -188,7 +189,7 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             await Context.Channel.SendMessageAsync(embed: embed.Build());
-            await UpdateList();
+            await UpdateMethods.Update.PlayerList();
         }
 
         [Command("insert")]
@@ -201,7 +202,7 @@ namespace CustomsQueueBot.Core.Commands
         {
             ulong _id;
             SocketGuildUser _user;
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -248,7 +249,8 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             Player player1 = new Player();
-            player1.Nickname = _user.Username;
+            player1.DiscordName = _user.Username;
+            player1.Nickname = _user.Nickname;
             player1.DiscordID = _user.Id;
             player1.IsActive = isActive;
 
@@ -264,7 +266,7 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task MovePlayer(string userID, int position)
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -313,7 +315,7 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task BanPlayer(string userID, [Remainder] string reason = "")
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -442,10 +444,16 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task QueueStats()
         {
+            if (!Caches.Lobby.IsOpen)
+            {
+                await Context.Channel.SendMessageAsync("There is no open queue.");
+                return;
+            }
+
             double AverageGames = 0;
 
-            var embed = new EmbedBuilder().WithTitle("Queue Stats")
-                .WithDescription("Statistics:")
+            var embed = new EmbedBuilder().WithTitle("Statistics")
+                .WithDescription("Queue Stats:")
                 .WithColor(Color.DarkGrey);
 
             var field = new EmbedFieldBuilder();
@@ -477,7 +485,7 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task GamesPlayedAdd(string userID)
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -512,7 +520,7 @@ namespace CustomsQueueBot.Core.Commands
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task GamesPlayedSubtracts(string userID)
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -556,37 +564,29 @@ namespace CustomsQueueBot.Core.Commands
                 }
             */
 
-        private async Task UpdateList()
+        [Command("recall")]
+        [Summary(": Announces the last group called by Next or Random again.")]
+        [RequireUserPermission(GuildPermission.ManageChannels)]
+        public async Task RecallList()
         {
-            var Message = Caches.Messages.PlayerListEmbed;
-            var Channel = Caches.Messages.ReactionMessageChannel;
-
-            var embed = new EmbedBuilder()
-                                .WithTitle($"Current Player q-υωυ-e Listings ({PlayerList.Playerlist.Count()})")
-                                .WithDescription("-----------------------------------------------------------------------")
-                                .WithFooter($"{DateTime.Now}");
-            List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
-
-            int counter = 1;
-
-            foreach (Player player in PlayerList.Playerlist)
+            if (!Caches.Lobby.IsOpen)
             {
-                var field = new EmbedFieldBuilder();
-                field.WithName($"{player.Nickname}")
-                    .WithValue($"Status: {(player.IsActive ? "Active" : "`Inactive`")}\nPosition: {counter}\n-----------------------")
-                    .WithIsInline(true);
-                counter++;
-                fields.Add(field);
+                await Context.Channel.SendMessageAsync("There is no open q-υωυ-e, silly.");
+                return;
             }
 
-            foreach (var field in fields)
+            string mentions = "";
+            foreach (Player player in PlayerList.RecentList)
             {
-                embed.AddField(field);
+                var user = Context.Guild.GetUser(player.DiscordID);
+                mentions += $"{user.Mention} "; // @mentions the players
             }
-                        
-            await Message.ModifyAsync(x => x.Embed = embed.Build());
 
+            mentions += "\n\nLast call for your game! Join the lobby soon or you will forfeit your spot. If you are having issue, please contact a mod.";
 
+            await Context.Channel.SendMessageAsync(mentions);
+            
         }
+
     }
 }

@@ -102,11 +102,60 @@ namespace CustomsQueueBot.Core.Commands
         }
 */
 
+        [Command("Quit")]
+        [Alias("quit")]
+        [Summary(": Indicate that you no longer intend to join any more custom games. This will remove you from the list." +
+            " To prevent accidental use, the user will need to send 'agree' with the command." +
+            "\nEx. Syntax: +finished agree")]
+        public async Task QuitCustoms(string agree = "")
+        {
+            if (!Caches.Lobby.IsOpen) return;
+
+            var user = Context.Message.Author;
+            if (agree.ToLower() == "agree")
+            {
+                Player quitter = new Player();
+
+                Console.WriteLine("DEBUG: ForLoop (DB) Start");
+                foreach (Player player in PlayerList.PlayerlistDB)
+                {
+                    if (player.DiscordID == user.Id)
+                    {
+                        quitter = player;
+                        PlayerList.PlayerlistDB.Remove(quitter);
+                        break;
+                    }
+                }
+                foreach (Player player in PlayerList.Playerlist)
+                {
+                    if (player.DiscordID == user.Id)
+                    {
+                        quitter = player;
+                        PlayerList.Playerlist.Remove(quitter);
+                        break;
+                    }
+                }
+                  
+                Console.WriteLine("DEBUG: Writing string response");
+                string response = $"You have removed yourself from the queue {user.Username}";
+
+                Console.WriteLine("DEBUG: SendMessageAsync");
+                await Context.Channel.SendMessageAsync(response);
+                Console.WriteLine("DEBUG: Success.");
+                await UpdateMethods.Update.PlayerList();
+                Console.WriteLine("DEBUG: Player List updated");
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync($"Consent required to use command {user.Username}.");
+            }
+        }
+        
         [Command("status")]
         [Summary(": Change your active status between active and inactive. \nex: +status")]
         public async Task SetActiveStatus()
         {
-            if (!Caches.IsOpen.isOpen)
+            if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
@@ -125,7 +174,7 @@ namespace CustomsQueueBot.Core.Commands
                         player.IsActive = false;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
                         await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateList();
+                        await UpdateMethods.Update.PlayerList();
                         return; 
                     }
                     else if (!player.IsActive) // Set to active
@@ -133,7 +182,7 @@ namespace CustomsQueueBot.Core.Commands
                         player.IsActive = true;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = true;
                         await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateList();
+                        await UpdateMethods.Update.PlayerList();
                         return;
 
                     }
@@ -175,38 +224,6 @@ namespace CustomsQueueBot.Core.Commands
                  */
 
 
-        private async Task UpdateList()
-        {
-            var Message = Caches.Messages.PlayerListEmbed;
-            var Channel = Caches.Messages.ReactionMessageChannel;
 
-            var embed = new EmbedBuilder()
-                                .WithTitle($"Current Player q-υωυ-e Listings ({PlayerList.Playerlist.Count()})")
-               .WithDescription("-----------------------------------------------------------------------")
-               .WithFooter($"{DateTime.Now}");
-            List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
-
-            int counter = 1;
-
-            foreach (Player player in PlayerList.Playerlist)
-            {
-                var field = new EmbedFieldBuilder();
-                field.WithName($"{player.Nickname}")
-                    .WithValue($"Status: {(player.IsActive ? "Active" : "`Inactive`")}\nPosition: {counter}\n-----------------------")
-                    .WithIsInline(true);
-                counter++;
-                fields.Add(field);
-            }
-
-            foreach (var field in fields)
-            {
-                embed.AddField(field);
-            }
-
-
-            await Message.ModifyAsync(x => x.Embed = embed.Build());
-
-
-        }
     }
 }
