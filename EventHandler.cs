@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 // using CustomsQueueBot.Core.Database;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace CustomsQueueBot
 {
@@ -49,6 +50,7 @@ namespace CustomsQueueBot
             if (!(_message is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
 
+            // Bans oVerbosity
             if (message.Author.Id == 254809263405269005)
             {
                 Random random = new Random();
@@ -83,143 +85,135 @@ namespace CustomsQueueBot
         {
 
             #region "Queue Message Reaction"
-            try
-            {                
-                if (reaction.User.Value.IsBot) return;
-                if (reaction == null || reaction.MessageId != Caches.Messages.ReactionMessage.Id) return;
-
-
-                Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Function Called.");
-
-                var user = reaction.User.Value as SocketGuildUser;
-                var emoji = new Emoji(Config.bot.reaction);  //"👍"
-                                                             //var emote = Emote.Parse();
-                bool exists = false;
-                Player playerCheck = new Player();
-
-                if (PlayerList.Playerlist.Count == 0)
+            if(!(Caches.Messages.ReactionMessage is null) &&  usermessage.Id == Caches.Messages.ReactionMessage.Id)
+                try
                 {
-                    playerCheck.DiscordID = user.Id;
-                    playerCheck.Nickname = user.Username;
-                    playerCheck.IsActive = true;
-                    PlayerList.Playerlist.Add(playerCheck);
-                    PlayerList.PlayerlistDB.Add(playerCheck);
-                    await UpdateList();
-                }
-                else if (PlayerList.Playerlist.Count > 0)
-                {
-                    foreach (Player player in PlayerList.PlayerlistDB)
-                    {
-                        if (player.DiscordID == user.Id)  // Check if player is in the database
-                        {
-                            playerCheck = player;
-                        }
-                    }
-                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordID}.");
-                    if (playerCheck.DiscordID == 0) //Player not found in DB
+                    var user = reaction.User.Value as SocketGuildUser;
+
+                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Function Called.");
+                    if (reaction.User.Value.IsBot) return;
+                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Bot check: Passed.");
+                    if (reaction == null || Caches.Messages.ReactionMessage == null) return;
+                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Null or Empty message check: Passed.");
+                    if (!user.Roles.Any(r => r.Name == Config.bot.role)) return; //ignore users who don't have the proper role. Don't know exactly if this is needed yet.
+
+                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Role check: Passed.");
+
+                    var emoji = new Emoji(Config.bot.reaction);  //"👍"
+                                                                 //var emote = Emote.Parse();
+                    bool exists = false;
+                    Player playerCheck = new Player();
+
+                    if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.role))
                     {
                         playerCheck.DiscordID = user.Id;
-                        playerCheck.Nickname = user.Username;
+                        playerCheck.DiscordName = user.Username;
+                        playerCheck.Nickname = user.Nickname;
                         playerCheck.IsActive = true;
                         PlayerList.Playerlist.Add(playerCheck);
                         PlayerList.PlayerlistDB.Add(playerCheck);
-                        await UpdateList();
-                        return;
+                        await UpdateMethods.Update.PlayerList();
                     }
-                    else
+                    else if (PlayerList.Playerlist.Count > 0)
                     {
-                        foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list
+                        foreach (Player player in PlayerList.PlayerlistDB)
                         {
-                            if (player.DiscordID == playerCheck.DiscordID)
+                            if (player.DiscordID == user.Id)  // Check if player is in the database
                             {
-                                Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
-                                player.IsActive = true;
-                                await UpdateList();
-                                return;
+                                playerCheck = player;
                             }
-                        }                        
+                        }
+                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordID}.");
+                        if (playerCheck.DiscordID == 0 && user.Roles.Any(r => r.Name == Config.bot.role)) //Player not found in DB
+                        {
+                            playerCheck.DiscordID = user.Id;
+                            playerCheck.DiscordName = user.Username;
+                            playerCheck.Nickname = user.Nickname;
+                            playerCheck.IsActive = true;
+                            PlayerList.Playerlist.Add(playerCheck);
+                            PlayerList.PlayerlistDB.Add(playerCheck);
+                            await UpdateMethods.Update.PlayerList();
+                            return;
+                        }
+                        else
+                        {
+                            foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list
+                            {
+                                if (player.DiscordID == playerCheck.DiscordID && user.Roles.Any(r => r.Name == Config.bot.role))
+                                {
+                                    Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
+                                    player.IsActive = true;
+                                    await UpdateMethods.Update.PlayerList();
+                                    return;
+                                }
+                            }
+                        }
                     }
-                } 
-                else if (!exists)
-                {
-                    playerCheck.DiscordID = user.Id;
-                    playerCheck.Nickname = user.Username;
-                    playerCheck.IsActive = true;
-                    PlayerList.Playerlist.Add(playerCheck);
-                    PlayerList.PlayerlistDB.Add(playerCheck);
-                    await UpdateList();
+                    else if (!exists)
+                    {
+                        playerCheck.DiscordID = user.Id;
+                        playerCheck.DiscordName = user.Username;
+                        playerCheck.Nickname = user.Nickname;
+                        playerCheck.IsActive = true;
+                        PlayerList.Playerlist.Add(playerCheck);
+                        PlayerList.PlayerlistDB.Add(playerCheck);
+                        await UpdateMethods.Update.PlayerList();
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine();
-                Console.WriteLine(e);
-                Console.WriteLine();
-            }            
+                catch (Exception e)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine();
+                }
+            #endregion
+
+            //else
+
+
         }
 
-        #endregion
+        
 
 
 
         private async Task ReactionRemoved(Cacheable<IUserMessage, ulong> userMessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             if (!reaction.User.IsSpecified) return;
-            if (reaction.MessageId != Caches.Messages.ReactionMessage.Id) return;
+            if (reaction.User.Value.IsBot) return;
+            if (reaction is null || (Caches.Messages.ReactionMessage is null)) return;
+
+            Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: PBasic check: Passed.");
 
             //userMessage.id is the id of the message the user is reacting to
             //Check if the message the user is reacting to is a valid reaction message
             //If valid, the message id should exist in our ReactionMessages collection
+
+            #region "Queue Message Reaction"
             if (Caches.Messages.ReactionMessage.Id == userMessage.Id)
             {
+                Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: Reaction Message check: Passed.");
                 var user = reaction.User.Value;
 
                 foreach (Player player in PlayerList.Playerlist)
                 {
+                    Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: Playerlist ForEach~~.");
                     if (player.DiscordID == user.Id)
                     {
+                        Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: User check: Passed.");
                         player.IsActive = false;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
 
                     }
                 }
             }
-            await UpdateList();
+            await UpdateMethods.Update.PlayerList();
+           
+            #endregion
+        
         }
 
-        private async Task UpdateList()
-        {
-            var Message = Caches.Messages.PlayerListEmbed;
-            var Channel = Caches.Messages.ReactionMessageChannel;
 
-            var embed = new EmbedBuilder()
-                .WithTitle($"Current Player q-υωυ-e Listings ({PlayerList.Playerlist.Count})")
-               .WithDescription("-----------------------------------------------------------------------").
-               WithFooter($"{DateTime.Now}");
-            List<EmbedFieldBuilder> fields = new List<EmbedFieldBuilder>();
-
-            int counter = 1;
-
-            foreach (Player player in PlayerList.Playerlist)
-            {
-                var field = new EmbedFieldBuilder();
-                field.WithName($"{player.Nickname}")
-                    .WithValue($"Status: {(player.IsActive ? "Active" : "`Inactive`")}\nPosition: {counter}\n-----------------------")
-                    .WithIsInline(true);
-                counter++;
-                fields.Add(field);
-            }
-
-            foreach (var field in fields)
-            {
-                embed.AddField(field);
-            }
-
-
-            await Message.ModifyAsync(x => x.Embed = embed.Build());
-
-
-        }
 
     }
 }
