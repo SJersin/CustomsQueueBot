@@ -60,7 +60,7 @@ namespace CustomsQueueBot
         {
             string toReturn = "";
 
-            toReturn += "Token: " + token + "\nPrefix:\t" + prefix + "\nReaction:\t" + reaction + "\nRole:\t" + role + "\nGroup size:\t" + groupsize 
+            toReturn += "Prefix:\t" + prefix + "\nReaction:\t" + reaction + "\nRole:\t" + role + "\nGroup size:\t" + groupsize 
                 + "\nMessage cache size:\t" + messagesize;
 
 
