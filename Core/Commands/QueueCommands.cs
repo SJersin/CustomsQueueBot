@@ -146,8 +146,7 @@ namespace CustomsQueueBot.Core.Commands
                     .WithTitle("Current Configuration:")
                     .WithDescription("-------------------------------")
                     .WithColor(Color.Blue);
-
-                Config.bot.token = "[protected]";
+                
                 var field = new EmbedFieldBuilder()
                     .WithName(Config.bot.ToString())
                     .WithValue(DateTime.Now.ToString());
