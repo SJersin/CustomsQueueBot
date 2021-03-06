@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Discord;
 using Discord.Commands;
 using System.Threading.Tasks;
-using System.Linq;
-using Discord.WebSocket;
+
 
 /*
  * 0.6c - Changes to file:
@@ -102,8 +99,7 @@ namespace CustomsQueueBot.Core.Commands
         }
 */
 
-        [Command("Quit")]
-        [Alias("quit")]
+        [Command("quit")]
         [Summary(": Indicate that you no longer intend to join any more custom games. This will remove you from the list." +
             " To prevent accidental use, the user will need to send 'agree' with the command." +
             "\nEx. Syntax: +finished agree")]

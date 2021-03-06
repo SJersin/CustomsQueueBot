@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-// using CustomsQueueBot.Core.Database;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 
@@ -43,6 +42,14 @@ namespace CustomsQueueBot
 
         private async Task OnMessageReceived(SocketMessage _message)
         {
+            //**************************************************************
+            //          DATABASE TESTING ZONE 
+
+            //Core.Database.Database db = new Core.Database.Database(); //          DATABASE TESTING ZONE 
+            //
+            //**************************************************************
+
+
             var Message = _message as SocketUserMessage;    //Gets the user message object from SocketMessage
             var Context = new SocketCommandContext(Client, Message);
 
@@ -65,7 +72,7 @@ namespace CustomsQueueBot
             
 
             int ArgPos = 0;
-            if (!(Message.HasStringPrefix(Config.bot.prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos))) return; //Ignore non-prefixed messages or has an @mention(?)
+            if (!(Message.HasStringPrefix(Config.bot.prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos))) return; //Ignore non-prefixed messages or bot @mention(?)
 
             var Result = await Commands.ExecuteAsync(Context, ArgPos, _Services); // Third arguement set IServices. Use null if not using an IService.
             if (!Result.IsSuccess && Result.Error != CommandError.UnknownCommand)
@@ -104,12 +111,33 @@ namespace CustomsQueueBot
                     bool exists = false;
                     Player playerCheck = new Player();
 
+                    /*/------------------DATABASE ZONE-----------------------
+                    Core.Database.Database db = new Core.Database.Database();
+                    if (!db.UserExists(user.Id))
+                    {
+                        db.CreateUser(new Core.Database.Player
+                        {
+                            DiscordID = user.Id,
+                            InGameName = "NOT SET",
+                            PlayerLevel = 0,
+                            PlaysFrontline = 0,
+                            PlaysSupport = 0,
+                            PlaysFlank = 0,
+                            PlaysDamage = 0,
+                            IsBanned = 0,
+                            BannedReason = "None. Yet.",
+                        });
+                    }
+                    //------------------------------------------------------
+                    */
+
                     if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.role))
                     {
                         playerCheck.DiscordID = user.Id;
                         playerCheck.DiscordName = user.Username;
                         playerCheck.Nickname = user.Nickname;
                         playerCheck.IsActive = true;
+                        playerCheck.EntryTime = DateTime.Now;
                         PlayerList.Playerlist.Add(playerCheck);
                         PlayerList.PlayerlistDB.Add(playerCheck);
                         await UpdateMethods.Update.PlayerList();
@@ -118,18 +146,19 @@ namespace CustomsQueueBot
                     {
                         foreach (Player player in PlayerList.PlayerlistDB)
                         {
-                            if (player.DiscordID == user.Id)  // Check if player is in the database
+                            if (player.DiscordID == user.Id)  // Check if player is in the userbase
                             {
                                 playerCheck = player;
                             }
                         }
-                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordID}.");
+                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordName}: {playerCheck.DiscordID}.");
                         if (playerCheck.DiscordID == 0 && user.Roles.Any(r => r.Name == Config.bot.role)) //Player not found in DB
                         {
                             playerCheck.DiscordID = user.Id;
                             playerCheck.DiscordName = user.Username;
                             playerCheck.Nickname = user.Nickname;
                             playerCheck.IsActive = true;
+                            playerCheck.EntryTime = DateTime.Now;
                             PlayerList.Playerlist.Add(playerCheck);
                             PlayerList.PlayerlistDB.Add(playerCheck);
                             await UpdateMethods.Update.PlayerList();
@@ -155,6 +184,7 @@ namespace CustomsQueueBot
                         playerCheck.DiscordName = user.Username;
                         playerCheck.Nickname = user.Nickname;
                         playerCheck.IsActive = true;
+                        playerCheck.EntryTime = DateTime.Now;
                         PlayerList.Playerlist.Add(playerCheck);
                         PlayerList.PlayerlistDB.Add(playerCheck);
                         await UpdateMethods.Update.PlayerList();

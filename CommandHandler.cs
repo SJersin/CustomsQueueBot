@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 using System.Reflection;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CustomsQueueBot

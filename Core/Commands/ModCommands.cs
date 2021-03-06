@@ -20,8 +20,8 @@ namespace CustomsQueueBot.Core.Commands
     public class ModCommands : ModuleBase<SocketCommandContext>
     {   
         [Command("active")]
-        [Alias()]
-        [Summary(": Change a player's active status. Use the command to change a player's active status between active <-> inactive\nex: +status 123456789 or +active @playername")]
+        [Summary(": Change a player's active status. Use the command to change a player's active status between active <-> inactive." +
+            "\nCan use either a user id or @mention. ex: `active @playername`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task ChangeActiveStatus(string userID = "")
         {
@@ -77,7 +77,7 @@ namespace CustomsQueueBot.Core.Commands
 
         [Command("add")]
         [Alias("ap", "addplayer")]
-        [Summary(": Adds a player to the end of the list.\nCan use DiscordID or @mention\nSyntax: add [ID] or add [ID] [status]\nex: `add 123456789 false`")]
+        [Summary(": Adds a player to the end of the list.\nCan use a DiscordID or @mention\nSyntax: add [ID] or add [ID] [status]\nex: `add 123456789 false`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task AddPlayer(string userID, bool isActive = true)
         {
@@ -133,6 +133,7 @@ namespace CustomsQueueBot.Core.Commands
             player1.Nickname = _user.Nickname;
             player1.DiscordID = _user.Id;
             player1.IsActive = isActive;
+            player1.EntryTime = DateTime.Now;
 
             PlayerList.Playerlist.Add(player1);
             PlayerList.PlayerlistDB.Add(player1);
@@ -144,7 +145,7 @@ namespace CustomsQueueBot.Core.Commands
         [Command("remove")]
         [Alias("removeplayer", "rp", "-p")]
         [Summary(": Remove a player from the queue\nCan pass either a userID number or an @mention.\n" +
-            "Can pass a reason as a second argument.\nex. `remove @[player] reason.`")]
+            "Can pass a reason as a second argument.\nex. `remove @[player] [reason].`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task RemovePlayer(string userID, [Remainder] string reason = "")
         {
@@ -195,7 +196,7 @@ namespace CustomsQueueBot.Core.Commands
         [Command("insert")]
         [Alias("ip", "insertplayer")]
         [Summary(": Insert a player into a specific spot in the queue.\nDefaults to the 1st element (front of queue).\n" +
-            "Arguments to pass are discord userID (or @mention), active state, and position to add in.\n" +
+            "Arguments to pass are a discord userID (or @mention), active state, and position to add in.\n" +
             "ex: `insert 123456789 false 5`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task InsertPlayer(string userID, bool isActive = true, int position = 0)
@@ -278,7 +279,6 @@ namespace CustomsQueueBot.Core.Commands
             ulong _id;
             SocketGuildUser _user;
             
-
             try
             {
                 _id = ulong.Parse(userID);
@@ -297,7 +297,7 @@ namespace CustomsQueueBot.Core.Commands
                     PlayerList.Playerlist.Remove(player);
                     PlayerList.Playerlist.Insert(position, player);
 
-                    embed.WithTitle($"{player.Nickname} has been moved")
+                    embed.WithTitle($"{player.DiscordName} has been moved")
                         .WithDescription($" from position {location + 1} to {position + 1}.");
 
                     await Context.Channel.SendMessageAsync(embed: embed.Build());
@@ -347,7 +347,7 @@ namespace CustomsQueueBot.Core.Commands
                         PlayerList.Playerlist.Remove(player);
                     PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsBanned = true;
                     PlayerList.Bannedlist.Add(player);
-                    embed.WithDescription($"{player.Nickname} has been banned from the queue.\nReason: {reason}")
+                    embed.WithDescription($"{player.DiscordName} has been banned from the queue.\nReason: {reason}")
                         .WithColor(Color.DarkRed);
                     await _user.SendMessageAsync($"You have been banned from the queue.\nReason: {reason}");
                     break;
@@ -364,7 +364,7 @@ namespace CustomsQueueBot.Core.Commands
         }
 
         [Command("unban")]
-        [Summary(": Removes a player from the banned list. Unbans the player.")]
+        [Summary(": Removes a player from the banned list. Can use either @mention or Discord ID.")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task UnbanAsync(string userID)
         {
@@ -510,7 +510,7 @@ namespace CustomsQueueBot.Core.Commands
                 if (player.DiscordID == _user.Id)
                 {
                     player.GamesPlayed++;
-                    await Context.Channel.SendMessageAsync($"{player.Nickname}'s game count incremented by 1.");
+                    await Context.Channel.SendMessageAsync($"{player.DiscordName} ({player.Nickname})'s game count incremented by 1.");
                 }
             }
         }
@@ -547,7 +547,7 @@ namespace CustomsQueueBot.Core.Commands
                     if (player.GamesPlayed > 0)
                     { 
                         player.GamesPlayed--; 
-                        await Context.Channel.SendMessageAsync($"{player.Nickname}'s game count decremented by 1.");
+                        await Context.Channel.SendMessageAsync($"{player.DiscordName} ({player.Nickname})'s game count decremented by 1.");
                     }
                 }
             }

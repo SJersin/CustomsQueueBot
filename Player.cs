@@ -21,6 +21,7 @@ namespace CustomsQueueBot
         private bool playsDamage;
         private bool isBanned;
         private string bannedReason;
+        private DateTime entryTime;
 
         public Player()
         {
@@ -52,6 +53,7 @@ namespace CustomsQueueBot
         public bool PlaysDamage { get => playsDamage; set => playsDamage = value; }
         public bool IsBanned { get => isBanned; set => isBanned = value; }
         public string BannedReason { get => bannedReason; set => bannedReason = value; }
+        public DateTime EntryTime { get => entryTime; set => entryTime = value; }
     }
 
     // Global Player class List 
@@ -70,7 +72,7 @@ namespace CustomsQueueBot
         {
             var Message = Caches.Messages.PlayerListEmbed;
             var Channel = Caches.Messages.ReactionMessageChannel;
-            SocketGuildUser user;
+           // SocketGuildUser user;
 
             var embed = new EmbedBuilder()
                 .WithTitle("Current Top 24 q-υωυ-e Listings:")
@@ -90,7 +92,7 @@ namespace CustomsQueueBot
             {
                     Player player = CustomsQueueBot.PlayerList.Playerlist[x];
                     var field = new EmbedFieldBuilder();
-                    field.WithName($"{player.DiscordName} ({player.Nickname})")
+                    field.WithName($"{player.Nickname} ({player.DiscordName})")
                         .WithValue($"Status: {(player.IsActive ? "Active" : "`Inactive`")}\nPosition: {counter}\n-----------------------")
                         .WithIsInline(true);
                     counter++;

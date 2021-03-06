@@ -32,6 +32,7 @@ namespace CustomsQueueBot
             if (!File.Exists(configFolder + "/" + configFile)) //Create file
             {
                 bot = new BotConfig();
+                bot.prefix = "+";
                 bot.groupsize = 8;
                 bot.messagesize = 5;
                 string json = JsonConvert.SerializeObject(bot, Formatting.Indented); //Json file creation

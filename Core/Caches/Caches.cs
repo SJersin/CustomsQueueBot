@@ -14,7 +14,7 @@ namespace CustomsQueueBot.Caches
         public static bool IsOpen { get; set; } = false;
     }
 
-    public class Messages
+    public struct Messages
     {
         public static IChannel ReactionMessageChannel { get; set; }
         public static IMessage ReactionMessage { get; set; }
