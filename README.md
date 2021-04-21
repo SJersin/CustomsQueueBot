@@ -1,6 +1,25 @@
 # CustomsQueueBot
 Discord.Net bot for managing a user pool for size limited games. (Paladins, Overwatch,  CS:GO, CoD, etc...)
 
+
+# Installation
+
+** Under Construction **
+
+
+
+# Release Nots:
+
+  0.7.1
+  1. Added a minimum number of games to play setting in the bot config. Defaults to 2.
+  2. Remodeled the "Random" command. It now just mixes up the player list to be use with "Next".
+  3. Fixed "Newest" pulling inactive players.
+  4. Added notice embed to "Newest" if pulled list is empty.
+  5. Renamed command "qstat" to "stats"
+  6. Began implementing SQLite database. Why? Why not? But seriously... Why again?
+
+
+
   0.6f
   
   -Added "Quit" command, which will remove users from the queue list. Used when users have finished playing for the night.
