@@ -5,7 +5,12 @@ using System.Threading.Tasks;
 
 
 /*
- * 0.6c - Changes to file:
+ * 0.8 changes made:
+ * 
+ * - Clarified intent and usage of the "Quit" command.
+ * - "Join" command put on indefinite hiatus. 
+ * 
+ * 0.6 - Changes to file:
  * 
  * -Status: no longer takes arguements. Instead toggles between active and inactive states.
  * -Join: Start work on command to allow players to join the queue without having to click the
@@ -101,16 +106,16 @@ namespace CustomsQueueBot.Core.Commands
 
         [Command("quit")]
         [Summary(": Indicate that you no longer intend to join any more custom games. This will remove you from the list." +
-            " To prevent accidental use, the user will need to send 'agree' with the command." +
-            "\nEx. Syntax: +finished agree")]
+            " To prevent accidental use, the user will need to send 'yes' or 'agree' with the command." +
+            "\nEx. Syntax: ` quit yes `")]
         public async Task QuitCustoms(string agree = "")
         {
             if (!Caches.Lobby.IsOpen) return;
 
             var user = Context.Message.Author;
-            if (agree.ToLower() == "agree")
+            if (agree.ToLower() == "agree" || agree.ToLower() == "yes")
             {
-                Player quitter = new Player();
+                Player quitter;
 
                 Console.WriteLine("DEBUG: ForLoop (DB) Start");
                 foreach (Player player in PlayerList.PlayerlistDB)

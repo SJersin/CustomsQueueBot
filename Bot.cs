@@ -49,7 +49,7 @@ namespace CustomsQueueBot
             await new EventHandler(Services).InitializeAsync();
 
             Client.Log += Client_Log;
-            if (string.IsNullOrWhiteSpace(Config.bot.token))    // Check for bot's token. Same thing as: if (Config.bot.token == "" || Config.bot.token == null) return;
+            if (string.IsNullOrWhiteSpace(Config.bot.Token))    // Check for bot's token. Same thing as: if (Config.bot.token == "" || Config.bot.token == null) return;
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
                 Console.WriteLine("The bot's token is not set. Set the token in the config file located in the \\Resources\\ directory.");
@@ -57,7 +57,7 @@ namespace CustomsQueueBot
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(Config.bot.prefix))    // Check for bot's prefix.
+            if (string.IsNullOrWhiteSpace(Config.bot.Prefix))    // Check for bot's prefix.
             {
                 Console.WriteLine("\n--------**** ERROR ****--------");
                 Console.WriteLine("The bot's prefix is not set. Set the prefix in the config file located in the \\Resources\\ directory.");
@@ -66,10 +66,10 @@ namespace CustomsQueueBot
             }
             else
             {
-                Console.WriteLine($"{ DateTime.Now} => [Prefix Key] : Set to [{Config.bot.prefix}].");
+                Console.WriteLine($"{ DateTime.Now} => [Prefix Key] : Set to [{Config.bot.Prefix}].");
             }
 
-            await Client.LoginAsync(TokenType.Bot, Config.bot.token);
+            await Client.LoginAsync(TokenType.Bot, Config.bot.Token);
             await Client.StartAsync();
             await Task.Delay(Timeout.Infinite); //Time for tasks to run. -1 is unlimited time. Timeout.Infinite has clearer intent.
 

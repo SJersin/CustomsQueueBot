@@ -15,8 +15,8 @@ namespace CustomsQueueBot
         private ulong discordID;
         private bool isActive;
         private int playerLevel;
-        private bool playsFrontline;
-        private bool playsSupport;
+        private bool playsTank;
+        private bool playsHealer;
         private bool playsFlank;
         private bool playsDamage;
         private bool isBanned;
@@ -25,19 +25,19 @@ namespace CustomsQueueBot
 
         public Player()
         {
-            nickname = "";
-            discordName = "";
-            gamesPlayed = 0;
-            elo = 0;
-            discordID = 0;
-            playerLevel = 0;
-            isActive = true;
-            playsFrontline = false;
-            playsSupport = false;
-            playsFlank = false;
-            playsDamage = false;
-            isBanned = false;
-            bannedReason = "";
+            Nickname = "";
+            DiscordName = "";
+            GamesPlayed = 0;
+            Elo = 0;
+            DiscordID = 0;
+            PlayerLevel = 0;
+            IsActive = true;
+            PlaysTank = false;
+            PlaysHealer = false;
+            PlaysFlank = false;
+            PlaysDamage = false;
+            IsBanned = false;
+            BannedReason = "";
 
         }
         public ulong DiscordID { get => discordID; set => discordID = value; }
@@ -47,8 +47,8 @@ namespace CustomsQueueBot
         public int Elo { get => elo; set => elo = value; }
         public bool IsActive { get => isActive; set => isActive = value; }
         public int PlayerLevel { get => playerLevel; set => playerLevel = value; }
-        public bool PlaysFrontline { get => playsFrontline; set => playsFrontline = value; }
-        public bool PlaysSupport { get => playsSupport; set => playsSupport = value; }
+        public bool PlaysTank { get => playsTank; set => playsTank = value; }
+        public bool PlaysHealer { get => playsHealer; set => playsHealer = value; }
         public bool PlaysFlank { get => playsFlank; set => playsFlank = value; }
         public bool PlaysDamage { get => playsDamage; set => playsDamage = value; }
         public bool IsBanned { get => isBanned; set => isBanned = value; }

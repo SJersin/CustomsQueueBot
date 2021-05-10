@@ -22,13 +22,13 @@ namespace CustomsQueueBot.Core.Commands
         [Summary(": Displays all of the bot's commands, or displays info about a specific command.")]
         public async Task Help([Remainder] string command = "")
         {
-            string prefix = Config.bot.prefix; //Set the bot prefix string to a variable
+            string prefix = Config.bot.Prefix; //Set the bot prefix string to a variable
             if (command == "")
             {
                 var embed = new EmbedBuilder()
                 {
                     Color = new Color(004, 137, 218),   //random colors for funsies.
-                    Description = $"Here are the commands. \nUse {Config.bot.prefix}help [command] for more information on the command."
+                    Description = $"Here are the commands. \nUse {Config.bot.Prefix}help [command] for more information on the command."
                 };
 
                 foreach (var module in _Service.Modules)

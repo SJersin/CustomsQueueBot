@@ -18,6 +18,12 @@ using Newtonsoft.Json;  //Using Json files
 
 namespace CustomsQueueBot
 {
+
+    public class Version
+    {
+        public static string GetVersion { get; } = "0.8.1";
+    }
+
     class Config
     {
         private const string configFolder = "Resources";
@@ -32,9 +38,11 @@ namespace CustomsQueueBot
             if (!File.Exists(configFolder + "/" + configFile)) //Create file
             {
                 bot = new BotConfig();
-                bot.prefix = "+";
-                bot.groupsize = 8;
-                bot.messagesize = 5;
+                bot.Prefix = "+";
+                bot.GroupSize = 8;
+                bot.MaxSize = 10;
+                bot.MessageSize = 2;
+                bot.MinGamesPlayed = 2;
                 string json = JsonConvert.SerializeObject(bot, Formatting.Indented); //Json file creation
                 File.WriteAllText(configFolder + "/" + configFile, json);
             }
@@ -50,19 +58,21 @@ namespace CustomsQueueBot
         private const string configFolder = "Resources";
         private const string configFile = "config.json";
 
-        public string token { get; set; }
-        public string prefix { get; set; }
-        public string reaction { get; set; }
-        public string role { get; set; }
-        public int groupsize { get; set; }
-        public int messagesize { get; set; }
+        public string Token { get; set; }
+        public string Prefix { get; set; }
+        public string Reaction { get; set; }
+        public string Role { get; set; }
+        public int GroupSize { get; set; }
+        public int MaxSize { get; set; }
+        public int MessageSize { get; set; }
+        public int MinGamesPlayed { get; set; }
 
         public override string ToString()
         {
             string toReturn = "";
 
-            toReturn += "Prefix:\t" + prefix + "\nReaction:\t" + reaction + "\nRole:\t" + role + "\nGroup size:\t" + groupsize 
-                + "\nMessage cache size:\t" + messagesize;
+            toReturn += "Prefix:\t" + Prefix + "\nReaction:\t" + Reaction + "\nRole:\t" + Role + "\nGroup size:\t" + GroupSize +
+                "\nMax group size:\t" + MaxSize + "\nMessage cache size:\t" + MessageSize + "\nMin # of games:\t" + MinGamesPlayed;
 
 
             return toReturn;
@@ -85,4 +95,7 @@ namespace CustomsQueueBot
             return check;
         }
     }
+
+    
+
 }

@@ -13,17 +13,28 @@ using System.IO;
 using Newtonsoft.Json;
 
 /*
+ * 0.8 Changes made:
+ * 
+ * -Renamed "Newest" to "New". Combined the functionality of "Next" and "Newest".
+ * -Added a 'maximum number of players to be pulled' setting in the bot config. This is mostly to allow for numeric passwords.
+ *      Defaults to 10.
+ * -Began implementing logging services with Serilog. Why not, right?
+ * 
  * 0.7 Changes made:
  * 
+ * -Added a 'minimum number of games to play' setting in the bot config. Defaults to 2.
+ * -Remodeled the "Random" command. It now just mixes up the player list to be use with "Next".
  * -Fixed "Newest" pulling inactive players.
- * -Began implementing SQLite database.
+ * -Added notice embed to "Newest" if pulled list is empty.
+ * -Renamed command "qstat" to "stats"
+ * -Began implementing SQLite database. Why? Why not? But seriously... Why again?
  * 
  * 0.6e Changes made:
  * 
  * -Added "Least" command, which shows players who have played less than 3 games in the queue.
  * -Fixed bug that randomly added people to the list and would pull them for lobbies.
  * -Added Role checks to reaction handler.
- * -Added "Config" command, which allows for changing the config file values from the bot. Restarting the bot is required for changes to take effect.
+ * -Added "Config" command, which allows for changing the config file values from the bot. Restarting the bot is recommended for changes to fully take effect.
  * -Added "Recall" command, which pings users from the most recently pulled list again as a last call.
  * -Fixed "Next" not working properly. It works properly now. Proper.
  * -
@@ -48,9 +59,12 @@ using Newtonsoft.Json;
 
 namespace CustomsQueueBot.Core.Commands
 {
+
     public class QueueCommands : ModuleBase<SocketCommandContext>
     {
+
         [Command("create")]
+        [Alias("Create")]
         [Summary(": Create a new queue for users to join.\nYou must pass a user role @mention.\nex: `create @customs`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task NewQueue(IRole role)
@@ -83,7 +97,7 @@ namespace CustomsQueueBot.Core.Commands
 
             embed.AddField(field);
             Caches.Messages.ReactionMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());    // Sends the embed for people to react to.
-            var emote = new Emoji(Config.bot.reaction);  //"👍"
+            var emote = new Emoji(Config.bot.Reaction);  //"👍"
                                                          //var emote = Emote.Parse(Config.bot.reaction);
 
             await Caches.Messages.ReactionMessage.AddReactionAsync(emote);
@@ -115,9 +129,8 @@ namespace CustomsQueueBot.Core.Commands
                     .WithDescription("The queue has been closed and the list has been emptied.\nThank you everyone " +
                     "who joined in today's session!!");
                 Caches.Lobby.IsOpen = false;
-                await Context.Channel.SendMessageAsync(embed: embed.Build());
-
                 ConfigChecks.Checks.DeleteQueueMessages();
+                await Context.Channel.SendMessageAsync(embed: embed.Build());
             }
         }
 
@@ -126,8 +139,10 @@ namespace CustomsQueueBot.Core.Commands
             "\n-prefix\tChange the prefix string the bot responds to." +
             "\n-react\tChange the reaction used by the bot." +
             "\n-group\tChange the size of the group the bot will pull." +
+            "\n-maxsize\tChange the maximum number of players the bot can pull." +
             "\n-role\tChange the role needed by the user for the bot to accept them." +
-            "\n-msg\tChange the number of of messages to leave before starting to clean them up.")] //make sure to list parameters in here!!
+            "\n-msgsize\tChange the number of of messages to leave before starting to clean them up." +
+            "\n-mingames\tChange the minimum number of games that players should be able to play.")] //make sure to list parameters in here!!
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task BotConfig(string attrib = "", [Remainder] string value = "")
         {
@@ -152,6 +167,7 @@ namespace CustomsQueueBot.Core.Commands
                     .WithName(Config.bot.ToString())
                     .WithValue(DateTime.Now.ToString());
                 embed.AddField(field);
+                embed.WithFooter($"Version: {Version.GetVersion}");
 
                 await Context.Channel.SendMessageAsync(embed: embed.Build());
                 return;
@@ -177,7 +193,7 @@ namespace CustomsQueueBot.Core.Commands
             {
                 try
                 {
-                    Config.bot.prefix = value;
+                    Config.bot.Prefix = value;
                     await Context.Channel.SendMessageAsync(onSuccess);
                 }
                 catch
@@ -189,7 +205,7 @@ namespace CustomsQueueBot.Core.Commands
             {
                 try
                 {
-                    Config.bot.reaction = value;
+                    Config.bot.Reaction = value;
                     await Context.Channel.SendMessageAsync(onSuccess);
                 }
                 catch
@@ -201,7 +217,7 @@ namespace CustomsQueueBot.Core.Commands
             {
                 try
                 {
-                    Config.bot.groupsize = int.Parse(value);
+                    Config.bot.GroupSize = int.Parse(value);
                     await Context.Channel.SendMessageAsync(onSuccess);
                 }
                 catch
@@ -209,11 +225,11 @@ namespace CustomsQueueBot.Core.Commands
                     await Context.Channel.SendMessageAsync(invalid);
                 }
             }
-            else if (attrib == "-msg")
+            else if (attrib == "-msgsize")
             {
                 try
                 {
-                    Config.bot.messagesize = int.Parse(value);
+                    Config.bot.MessageSize = int.Parse(value);
                     await Context.Channel.SendMessageAsync(onSuccess);
                 }
                 catch
@@ -225,7 +241,19 @@ namespace CustomsQueueBot.Core.Commands
             {
                 try
                 {
-                    Config.bot.role = value;
+                    Config.bot.Role = value;
+                    await Context.Channel.SendMessageAsync(onSuccess);
+                }
+                catch
+                {
+                    await Context.Channel.SendMessageAsync(invalid);
+                }
+            }
+            else if (attrib == "-mingames")
+            {
+                try
+                {
+                    Config.bot.MinGamesPlayed = Int16.Parse(value);
                     await Context.Channel.SendMessageAsync(onSuccess);
                 }
                 catch
@@ -250,11 +278,22 @@ namespace CustomsQueueBot.Core.Commands
                     await Context.Channel.SendMessageAsync(invalid);
                 }
             }
+            else if (attrib == "-maxsize")
+            {
+                try
+                {
+                    Config.bot.MaxSize = int.Parse(value);
+                    await Context.Channel.SendMessageAsync(onSuccess);
+                }
+                catch
+                {
+                    await Context.Channel.SendMessageAsync(invalid);
+                }
+            }
 
 
-
-            // ----THE END----
-            json = JsonConvert.SerializeObject(Config.bot, Formatting.Indented); //Json file creation
+                // ----THE END----
+                json = JsonConvert.SerializeObject(Config.bot, Formatting.Indented); //Json file creation
             File.WriteAllText(configFolder + "/" + configFile, json);
         }
 
@@ -304,7 +343,7 @@ namespace CustomsQueueBot.Core.Commands
         */
 
         [Command("least")]
-        [Summary(": Lists player with the least number of games played. Currently only shows a games played range of 0-2. If 3 or more games have been played, logic won't handle it and return empty embeds.")]
+        [Summary(": Lists player with the least number of games played. Currently only shows a games played range of 0-2. If 3 or more games have been played, logic won't handle it and return empty embeds. Will fix this later.")]
         public async Task LatestArrivals()
         {
             if (!Caches.Lobby.IsOpen)
@@ -316,75 +355,62 @@ namespace CustomsQueueBot.Core.Commands
             await Context.Channel.TriggerTypingAsync();
 
             List<Player> playersOrdered = new List<Player>();
+            var embed = new EmbedBuilder();
 
-            if (PlayerList.Playerlist.Count > 0)
+            int x = 0;
+            while (x <= Config.bot.MinGamesPlayed)
             {
-                int x = 0;
-                while (x < 4)
+                foreach (Player player in PlayerList.Playerlist)
                 {
-                    foreach (Player player in PlayerList.Playerlist)
-                    {
+                    if (player.GamesPlayed == x)
+                        playersOrdered.Add(player);
+                }
+                x++;
+            }
+
+            if (playersOrdered.Count > 0)
+            {
+                embed.WithTitle("Players with least games played:")
+                .WithDescription($"as of: {DateTime.Now}.");
+
+
+                EmbedFieldBuilder[] fields = new EmbedFieldBuilder[Config.bot.MinGamesPlayed];
+                //   EmbedFieldBuilder field1 = new EmbedFieldBuilder();
+                //   EmbedFieldBuilder field2 = new EmbedFieldBuilder();
+
+                for (x = 0; x <= Config.bot.MinGamesPlayed; x++)
+                {
+                    fields[x] = new EmbedFieldBuilder().WithName($" {x} Played:")
+                        .WithValue("--------------");
+                }
+
+                string[] gamesplayed = new string[Config.bot.MinGamesPlayed];
+
+                foreach (Player player in playersOrdered)
+                {
+                    for (x = 0; x <= Config.bot.MinGamesPlayed; x++)
                         if (player.GamesPlayed == x)
-                            playersOrdered.Add(player);
-                    }
-                    x++;
-                }
-
-                if (playersOrdered.Count > 0)
-                {
-                    var embed = new EmbedBuilder()
-                        .WithTitle("Players with least games played:")
-                        .WithDescription($"as of: {DateTime.Now}.");
-
-
-                    EmbedFieldBuilder field0 = new EmbedFieldBuilder();
-                    EmbedFieldBuilder field1 = new EmbedFieldBuilder();
-                    EmbedFieldBuilder field2 = new EmbedFieldBuilder();
-
-                    field0.WithName(" 0  Played:");
-                    field1.WithName(" 1  Played:");
-                    field2.WithName(" 2  Played:");
-                    string game0 = "--------------",
-                        game1 = "---------------",
-                        game2 = "---------------";
-
-                    foreach (Player player in playersOrdered)
-                    {
-                        if (player.GamesPlayed < 1)
                         {
-                            game0 += $"\n{player.DiscordName} ({player.Nickname})";
+                            gamesplayed[x] += $"\n{player.DiscordName} ({player.Nickname})";
+                            embed.AddField(fields[x]
+                                .WithValue(gamesplayed[x])
+                                .WithIsInline(true));
                         }
-                        else if (player.GamesPlayed < 2)
-                        {
-                            game1 += $"\n{player.DiscordName} ({player.Nickname})";
-                        }
-                        else if (player.GamesPlayed < 3)
-                        {
-                            game2 += $"\n{player.DiscordName} ({player.Nickname})";
-                        }
-                    }
 
-
-                    embed.AddField(field0.WithValue(game0).WithIsInline(true));
-                    embed.AddField(field1.WithValue(game1).WithIsInline(true));
-                    embed.AddField(field2.WithValue(game2).WithIsInline(true));
-
-                    if (Caches.Messages.LeastCommandMessage != null)
-                        await Caches.Messages.LeastCommandMessage.DeleteAsync();
-
-                    Caches.Messages.LeastCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
-                }
-                else
-                {
-                    //Send message saying the list is empty
-                    await Context.Channel.SendMessageAsync("The list is currently empty.");
                 }
             }
             else
             {
-                //Send message saying the list is empty
-                await Context.Channel.SendMessageAsync("The list is currently empty.");
+                embed.AddField(x =>
+                {
+                    x.Name = "List is empty.";
+                    x.Value = "No one here.";
+                });
             }
+            if (Caches.Messages.LeastCommandMessage != null)
+                await Caches.Messages.LeastCommandMessage.DeleteAsync();
+
+            Caches.Messages.LeastCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
 
 
         }
@@ -402,86 +428,106 @@ namespace CustomsQueueBot.Core.Commands
             }
             await Context.Channel.TriggerTypingAsync();
 
-            List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
-            var embed = new EmbedBuilder()
-                .WithTitle($"There are {PlayerList.Playerlist.Count} players in the list")
-                .WithCurrentTimestamp();
-
-            var embed2 = new EmbedBuilder()
-                .WithTitle("Player list continued...");
-
-            if (PlayerList.PlayerlistDB.Count > 0 && PlayerList.PlayerlistDB.Count < 25)
+            try
             {
+                List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
+                var embed = new EmbedBuilder()
+                    .WithTitle($"There are {PlayerList.Playerlist.Count} players in the list")
+                    .WithCurrentTimestamp();
 
-                Console.WriteLine($"{DateTime.Now} at list in QueueCommands: Playerlist DB count != 0.");
-                foreach (Player player in PlayerList.PlayerlistDB)
+                var embed2 = new EmbedBuilder()
+                    .WithTitle("Player list continued...");
+
+                if (PlayerList.PlayerlistDB.Count > 0 && PlayerList.PlayerlistDB.Count < 25)
                 {
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- fieldbuilder.");
-                    EmbedFieldBuilder field = new EmbedFieldBuilder();
 
-                    PlayerListField.Add(field.WithName(player.DiscordName)
-                    .WithValue($"Active: {(player.IsActive ? "Yes" : "`No`")}\nGames Played: {player.GamesPlayed}\nBanned: {(player.IsBanned ? "`Yes`" : "No")}\nTime joined: {player.EntryTime.ToShortTimeString()}")
-                    .WithIsInline(true));
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- listfield added.");
-                }
-                foreach (EmbedFieldBuilder field in PlayerListField)
-                {
-                    embed.AddField(field);
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach2- field added to embed.");
-                }
-                Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
-                Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
+                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: Playerlist DB count != 0.");
+                    foreach (Player player in PlayerList.PlayerlistDB)
+                    {
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- fieldbuilder.");
+                        EmbedFieldBuilder field = new EmbedFieldBuilder();
 
-            }
-            else if (PlayerList.PlayerlistDB.Count >= 25)
-            {
-                for (int x = 0; x < 25; x++)
-                {
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- fieldbuilder.");
-                    EmbedFieldBuilder field = new EmbedFieldBuilder();
-
-                    PlayerListField.Add(field.WithName(PlayerList.PlayerlistDB[x].DiscordName)
-                        .WithValue($"Active: {(PlayerList.PlayerlistDB[x].IsActive ? "Yes" : "`No`")}\nGames Played: {PlayerList.PlayerlistDB[x].GamesPlayed}" +
-                        $"\nBanned: {(PlayerList.PlayerlistDB[x].IsBanned ? "`Yes`" : "No")}")
+                        PlayerListField.Add(field.WithName($"{player.DiscordName} ({player.Nickname})")
+                        .WithValue($"Time joined: {player.EntryTime.ToShortTimeString()}\nGames Played: {player.GamesPlayed}\nActive: {(player.IsActive ? "Yes" : "`No`")}")
                         .WithIsInline(true));
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- listfield added.");
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- listfield added.");
+                    }
+                    foreach (EmbedFieldBuilder field in PlayerListField)
+                    {
+                        embed.AddField(field);
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach2- field added to embed.");
+                    }
+                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
+                    if (!(Caches.Messages.ListCommandMessage is null))
+                        await Caches.Messages.ListCommandMessage.DeleteAsync();
+                    Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
+
                 }
-                foreach (EmbedFieldBuilder field in PlayerListField)
+                else if (PlayerList.PlayerlistDB.Count >= 25)
                 {
-                    embed.AddField(field);
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- field added to embed.");
-                }
-                Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
-                Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
-                PlayerListField.Clear();
+                    for (int x = 0; x < 24; x++)
+                    {
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- fieldbuilder.");
+                        EmbedFieldBuilder field = new EmbedFieldBuilder();
 
-                for (int x = 25; x < PlayerList.PlayerlistDB.Count; x++)
+                        PlayerListField.Add(field.WithName(PlayerList.PlayerlistDB[x].DiscordName)
+                            .WithValue($"Active: {(PlayerList.PlayerlistDB[x].IsActive ? "Yes" : "`No`")}\nGames Played: {PlayerList.PlayerlistDB[x].GamesPlayed}" +
+                            $"\nBanned: {(PlayerList.PlayerlistDB[x].IsBanned ? "`Yes`" : "No")}")
+                            .WithIsInline(true));
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- listfield added.");
+                    }
+                    foreach (EmbedFieldBuilder field in PlayerListField)
+                    {
+                        embed.AddField(field);
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach- field added to embed.");
+                    }
+                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
+                    if (!(Caches.Messages.ListCommandMessage is null))
+                        await Caches.Messages.ListCommandMessage.DeleteAsync();
+                    Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
+                    PlayerListField.Clear();
+
+                    for (int x = 25; x < PlayerList.PlayerlistDB.Count; x++)
+                    {
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- fieldbuilder.");
+                        EmbedFieldBuilder field = new EmbedFieldBuilder();
+
+                        PlayerListField.Add(field.WithName(PlayerList.PlayerlistDB[x].DiscordName)
+                            .WithValue($"Active: {(PlayerList.PlayerlistDB[x].IsActive ? "Yes" : "`No`")}\nGames Played: {PlayerList.PlayerlistDB[x].GamesPlayed}" +
+                            $"\nBanned: {(PlayerList.PlayerlistDB[x].IsBanned ? "`Yes`" : "No")}")
+                            .WithIsInline(true));
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- listfield added.");
+                    }
+                    foreach (EmbedFieldBuilder field in PlayerListField)
+                    {
+                        embed2.AddField(field);
+                        Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach2- field added to embed.");
+                    }
+                    try
+                    {
+                        if (!(Caches.Messages.ListCommandMessage2 is null))
+                            await Caches.Messages.ListCommandMessage2.DeleteAsync();
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
+                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
+                    Caches.Messages.ListCommandMessage2 = await Context.Channel.SendMessageAsync(embed: embed2.Build());
+
+
+                }
+                else
                 {
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- fieldbuilder.");
-                    EmbedFieldBuilder field = new EmbedFieldBuilder();
+                    embed.WithTitle("The database is Empty.")
+                        .WithDescription("Get people in the list!");
 
-                    PlayerListField.Add(field.WithName(PlayerList.PlayerlistDB[x].DiscordName)
-                        .WithValue($"Active: {(PlayerList.PlayerlistDB[x].IsActive ? "Yes" : "`No`")}\nGames Played: {PlayerList.PlayerlistDB[x].GamesPlayed}" +
-                        $"\nBanned: {(PlayerList.PlayerlistDB[x].IsBanned ? "`Yes`" : "No")}")
-                        .WithIsInline(true));
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: for- listfield added.");
+                    Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
                 }
-                foreach (EmbedFieldBuilder field in PlayerListField)
-                {
-                    embed2.AddField(field);
-                    Console.WriteLine($"{DateTime.Now} at list in QueueCommands: foreach2- field added to embed.");
-                }
-                Console.WriteLine($"{DateTime.Now} at list in QueueCommands: ReplyAsync(embed.Build())- Building and sending embed.");
-                Caches.Messages.ListCommandMessage2 = await Context.Channel.SendMessageAsync(embed: embed2.Build());
-
-
             }
-            else
+            catch (Exception e) // Something bad has happened.
             {
-                embed.WithTitle("The database is Empty.")
-                    .WithDescription("Get people in the list!");
 
-                Caches.Messages.ListCommandMessage = await Context.Channel.SendMessageAsync(embed: embed.Build());
             }
 
         }
@@ -502,7 +548,7 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             int count = 0;
-            int groupSize = Config.bot.groupsize;
+            int groupSize = Config.bot.GroupSize;
             // Check for first argument: Is it a different group size number or just a password?
 
             try
@@ -513,7 +559,7 @@ namespace CustomsQueueBot.Core.Commands
             {
                 password = arg;
             }
-            
+
             // Check for number of active players
             foreach (Player active in PlayerList.Playerlist)
             {
@@ -560,7 +606,7 @@ namespace CustomsQueueBot.Core.Commands
             int ListPos = 0;
             string mentions = "";
             List<Player> players = new List<Player>();
-                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - While loop");
+            Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - While loop");
 
             while (index < groupSize)
             {
@@ -568,7 +614,7 @@ namespace CustomsQueueBot.Core.Commands
                 {
                     Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - SocketUser checkRole");
                     var checkRole = await Context.Channel.GetUserAsync(PlayerList.Playerlist[ListPos].DiscordID) as SocketGuildUser;
-                    if (checkRole.Roles.Any(r => r.Name == Config.bot.role))
+                    if (checkRole.Roles.Any(r => r.Name == Config.bot.Role))
                     {
                         Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - {PlayerList.Playerlist[ListPos]} has role. Adding to list");
                         players.Add(PlayerList.Playerlist[ListPos]);
@@ -583,7 +629,7 @@ namespace CustomsQueueBot.Core.Commands
                 }
 
             }
-          
+
             Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - Foreach player in players.");
             foreach (Player player in players)
             {
@@ -603,7 +649,7 @@ namespace CustomsQueueBot.Core.Commands
 
                 mentions += $"{user.Mention} "; // @mentions the players
                 Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - DMing {player.DiscordName} ({player.Nickname})");
-                await user.SendMessageAsync($"You are in {leader.Username}'s lobby. The password is: ` {password} ` .");
+                await user.SendMessageAsync($"You are in `{leader.Username}'s` lobby. The password is: ` {password} ` .");
                 Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - Direct Message sent.");
 
             }
@@ -621,125 +667,26 @@ namespace CustomsQueueBot.Core.Commands
             Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - Player list update method.");
             Caches.Messages.LobbyMessages.Add(Messagae);
 
-            if (Caches.Messages.LobbyMessages.Count() > Config.bot.messagesize) // Only have [x] embed messages showing at a time.
+            if (Caches.Messages.LobbyMessages.Count() > Config.bot.MessageSize) // Only have [x] embed messages showing at a time.
             {
                 await Caches.Messages.LobbyMessages[0].DeleteAsync();
                 Caches.Messages.LobbyMessages.RemoveAt(0);
             }
         }
 
-        /*        [Command("next?")]
-                [Alias("nextgame?")]
-                [Summary(": Gets and displays [x] number of players for the next lobby" +
-                    "\nIf no number is provided, default will be 8.\nThis will not actively " +
-                    "pull from the queue but merely display whom would be pulled next " +
-                    "based on current player activity modifiers")]
-                [RequireUserPermission(GuildPermission.ManageChannels)]
-                public async Task NextGroupList()
-                {
-                    // Start checks
 
-
-                    if (!Caches.IsOpen.isOpen)
-                    {
-                        await Context.Channel.SendMessageAsync("There is no open queue.");
-                        return;
-                    }
-
-                    int count = 0;
-                    int groupSize = Config.bot.groupsize;
-
-                    // Check for number of active players
-                    foreach (Player active in PlayerList.Playerlist)
-                    {
-                        if (active.IsActive)
-                            count++;
-                    }
-
-                    Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - Active player count: {count}");
-
-                    if (groupSize >= count) // If groupSize is larger than or equal to the count of active people--
-                    {
-                        groupSize = count; // Set groupSize to number of active players.
-                    }
-                    // End of Checks
-
-                    // Pull the next group from the queue list and displays their names.
-                    // Maybe have them get DMed the information(?)
-                    await Context.Channel.TriggerTypingAsync();
-
-                    // Create and display embed for users selected for next game.
-                    var embed = new EmbedBuilder().WithTitle($"Expected Next Lobby Group:")
-                        .WithDescription($"Here is the next group of players that should be called upon for the next lobby.\n*This is only an approximation.*")
-                        .WithColor(Color.DarkGreen);
-
-                    List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
-
-                    int index = 0;
-                    int ListPos = 0;
-                    string mentions = "";
-                    List<Player> players = new List<Player>();
-
-                    while (index < groupSize)
-                    {
-                        if (PlayerList.Playerlist[ListPos].IsActive && !PlayerList.Playerlist[ListPos].IsBanned)
-                        {
-                            players.Add(PlayerList.Playerlist[ListPos]);
-                            index++;
-                            ListPos++;
-                        }
-
-                        else  //Skip inactive players
-                        {
-                            ListPos++;
-                        }
-
-                    }
-
-                    foreach (Player player in players)
-                    {
-                        EmbedFieldBuilder field = new EmbedFieldBuilder();
-
-                        field.WithName($"{player.Nickname}")
-                            .WithValue($"-------------------")
-                            .WithIsInline(true);
-                        PlayerListField.Add(field);
-
-                    }
-                    foreach (EmbedFieldBuilder field in PlayerListField)
-                    {
-                        embed.AddField(field);
-                    }
-
-                    Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : next - Sending Mentions and Embed");
-                    var Messagae = await Context.Channel.SendMessageAsync(mentions, embed: embed.Build());
-                    Caches.Messages.LobbyMessages.Add(Messagae.Id);
-                }
-                */
-
-        [Command("random")]
-        [Summary(": Gets and displays [x] number of random players for the next lobby" +
-            "\nIf no number is provided, the default will be used.\nA third argument can be " +
-            "passed for the password.\nex: `random [password]` or `random [x] [password]`")]
+        [Command("random")]  //new random
+        [Summary(": Randomizes the player list to mix up the match ups.")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task RandomAsync(string arg = "", [Remainder] string password = "")
+        public async Task RandomAsync()
         {
             if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
             }
-            int groupSize = Config.bot.groupsize;
+            int groupSize = Config.bot.GroupSize;
             int count = 0;
-
-            try
-            {
-                groupSize = int.Parse(arg);
-            }
-            catch
-            {
-                password = arg;
-            }
 
             // Check for number of active players
             foreach (Player active in PlayerList.Playerlist)
@@ -748,77 +695,63 @@ namespace CustomsQueueBot.Core.Commands
                     count++;
             }
 
-            if (groupSize >= count)
-            {
-                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] Random: Group size larger than active pool. Repopulating list.");
-                groupSize = count;
-
-            }
-
             await Context.Channel.TriggerTypingAsync();
             var leader = Context.Guild.GetUser(Context.User.Id);
 
             List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
             List<Player> players = new List<Player>();
-            string mentions = "";
 
             // Create and display embed for users selected for next game.
-            var embed = new EmbedBuilder().WithTitle($"{leader.Username}'s Next Lobby Group:")
-                .WithDescription($"Here are the next RANDOM {groupSize} players for {leader.Username}'s lobby.\nThe password is: ` {password} `\n*Only join this lobby if your name is in this list!*")
-                .WithColor(Color.DarkGreen);
+            var embed = new EmbedBuilder();
             var random = new Random();
 
             HashSet<int> numbers = new HashSet<int>();
-            while (numbers.Count < groupSize)
+            while (numbers.Count < PlayerList.Playerlist.Count())
             {
                 int index = random.Next(0, PlayerList.Playerlist.Count());
 
                 var checkRole = await Context.Channel.GetUserAsync(PlayerList.Playerlist[index].DiscordID) as SocketGuildUser;
-                if (PlayerList.Playerlist[index].IsActive && !PlayerList.Playerlist[index].IsBanned && checkRole.Roles.Any(r => r.Name == Config.bot.role))
+                if (!PlayerList.Playerlist[index].IsBanned && checkRole.Roles.Any(r => r.Name == Config.bot.Role))
+                {
                     numbers.Add(index);
+                }
             }
 
             foreach (int number in numbers)
             {
-                var field = new EmbedFieldBuilder();
-                players.Add(PlayerList.Playerlist[number]);
-                PlayerListField.Add(field
-                    .WithName($"{PlayerList.Playerlist[number].DiscordName} ({PlayerList.Playerlist[number].Nickname})")
-                    .WithValue("*--------------------------*")
-                    .WithIsInline(true)
-                    );
+                if (PlayerList.Playerlist[number].IsActive)
+                    players.Add(PlayerList.Playerlist[number]);
+                else if (!PlayerList.Playerlist[number].IsActive && PlayerList.Playerlist[number].GamesPlayed <= Config.bot.MinGamesPlayed)
+                    players.Insert(0, PlayerList.Playerlist[number]);
             }
 
-            foreach (Player player in players)
+            try
             {
-                var user = Context.Guild.GetUser(player.DiscordID);
-                PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].GamesPlayed += 1;
-                PlayerList.Playerlist.Remove(player);
-                PlayerList.Playerlist.Add(player);
-
-                mentions += $"{user.Mention} "; // @mentions the players
-                await user.SendMessageAsync($"You are in {leader.Username}'s lobby. The password is: ` {password} ` .");
+                PlayerList.Playerlist = players;
+                embed.AddField(f =>
+                {
+                    f.Name = "Random";
+                    f.Value = "Player list randomized.";
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                embed.AddField(f =>
+                {
+                    f.Name = "UH OH!";
+                    f.Value = "Something went wrong. Sorry!";
+                });
             }
 
-            foreach (EmbedFieldBuilder field in PlayerListField)
-                embed.AddField(field);
-
-            var Messagae = await Context.Channel.SendMessageAsync(mentions, embed: embed.Build());
+            var Messagae = await Context.Channel.SendMessageAsync(embed: embed.Build());
             await UpdateMethods.Update.PlayerList();
-            Caches.Messages.LobbyMessages.Add(Messagae);
-
-
-            if (Caches.Messages.LobbyMessages.Count() > Config.bot.messagesize) // Only have x embed messages showing at a time.
-            {
-                await Context.Channel.DeleteMessageAsync(Caches.Messages.LobbyMessages[0]);
-                Caches.Messages.LobbyMessages.RemoveAt(0);
-            }
         }
 
-        [Command("newest")]
+    /*    [Command("newest")]
         [Summary("Gets and displays [x] number of players who have the lowest\n " +
-                    "number of games played for the next, usually last, lobbies.\nIf no number is provided, " +
-                    "the default will be used..\nA third argument can be passed for the password." +
+                    "number of games played for the next lobbies.\nIf no number is provided, " +
+                    "the default will be used.\nA third argument can be passed for the password." +
                     "\nex: `newest [password]` or `newest [x] [password]`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task LastCall(string arg = "", [Remainder] string password = "")
@@ -830,7 +763,7 @@ namespace CustomsQueueBot.Core.Commands
                 return;
             }
             int count = 0;
-            int groupSize = Config.bot.groupsize;
+            int groupSize = Config.bot.GroupSize;
             // Check for first argument: Is it a different group size number or just a password?
             try
             {
@@ -848,6 +781,11 @@ namespace CustomsQueueBot.Core.Commands
                     count++;
             }
 
+            if (PlayerList.RecentList.Any())
+            {
+                PlayerList.RecentList.Clear();
+            }
+
             Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : lastcall - Active player count: {count}");
 
             if (groupSize >= count)
@@ -856,22 +794,27 @@ namespace CustomsQueueBot.Core.Commands
             // End of Checks
 
             // Look into using a list of list<player>s
-            List<List<Player>> PlayerLists = new List<List<Player>>();
+
+            /* Reduce total play count to two.
+             * Change logic to allow for configuration
+             *
+
+            //List<List<Player>> PlayerLists = new List<List<Player>>();
 
             List<Player> players0 = new List<Player>();
             List<Player> players1 = new List<Player>();
-            List<Player> players2 = new List<Player>();
+            //List<Player> players2 = new List<Player>();
             List<Player> playersToAdd = new List<Player>();
 
             foreach (Player player in PlayerList.Playerlist)
             {
-                
+
                 if (player.GamesPlayed == 0)
                     players0.Add(player);
                 else if (player.GamesPlayed == 1)
                     players1.Add(player);
-                else if (player.GamesPlayed == 2)
-                    players2.Add(player);
+                /* else if (player.GamesPlayed == 2)
+                     players2.Add(player); *
             }
 
             if (players0.Any())
@@ -882,10 +825,10 @@ namespace CustomsQueueBot.Core.Commands
                 foreach (Player player in players1)
                     if (player.IsActive)
                         playersToAdd.Add(player);
-            if (players2.Any())
-                foreach (Player player in players2)
-                    if (player.IsActive)
-                        playersToAdd.Add(player);
+            // if (players2.Any())
+            //     foreach (Player player in players2)
+            //         if (player.IsActive)
+            //             playersToAdd.Add(player);
 
             if (playersToAdd.Any() && playersToAdd.Count > 1)
                 playersToAdd.RemoveRange(groupSize, (playersToAdd.Count - groupSize));
@@ -894,12 +837,193 @@ namespace CustomsQueueBot.Core.Commands
             var leader = Context.Guild.GetUser(Context.User.Id);
 
             // Create and display embed for users selected for next game.
-            var embed = new EmbedBuilder().WithTitle($"{leader.Username}'s Next Lobby Group:")
-                .WithDescription($"Here are the next {groupSize} players for {leader.Username}'s lobby.\nThe password is: ` {password} `\n*Only join this lobby if your name is in this list!*")
-                .WithColor(Color.DarkGreen);
+
 
             List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
             string mentions = "";
+            if (playersToAdd.Count == 0)
+            {
+                var embed = new EmbedBuilder().WithTitle($"List is empty")
+                .WithDescription($"All active players have played at least 2 games.")
+                .WithColor(Color.DarkRed);
+                var Messagae = await Context.Channel.SendMessageAsync(embed: embed.Build());
+            }
+            else
+            {
+                // Create and display embed for users selected for next game.
+                var embed = new EmbedBuilder().WithTitle($"{leader.Username}'s Next Lobby Group:")
+                    .WithDescription($"Here are the next {groupSize} players for {leader.Username}'s lobby.\nThe password is: ` {password} `\n*Only join this lobby if your name is in this list!*")
+                    .WithColor(Color.DarkGreen);
+
+                foreach (Player player in playersToAdd)
+                {
+                    var user = Context.Guild.GetUser(player.DiscordID); // get the userID to mention
+
+                    EmbedFieldBuilder field = new EmbedFieldBuilder();
+                    field.WithName($"{user.Username} ({user.Nickname})")
+                        .WithValue($"*--------------------------*")
+                        .WithIsInline(true);
+
+                    Console.WriteLine($"{DateTime.Now} => [DEBUGGING] :: Newest: {user.Username} has been pulled.");
+
+                    PlayerList.Playerlist.Remove(player);
+                    PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].GamesPlayed += 1;
+                    PlayerList.RecentList.Add(player);
+                    if (!PlayerList.Playerlist.Contains(player))
+                        PlayerList.Playerlist.Add(player);
+
+                    mentions += $"{user.Mention} "; // @mentions the players
+                    await user.SendMessageAsync($"You are in {leader.Nickname}'s lobby. The password is: ` {password} ` .");
+                    PlayerListField.Add(field);
+                }
+                foreach (EmbedFieldBuilder field in PlayerListField)
+                {
+                    embed.AddField(field);
+                    Console.WriteLine($"{DateTime.Now} => [DEBUGGING] :: Newest: Adding fields to embed.");
+                }
+
+                var Messagae = await Context.Channel.SendMessageAsync(mentions, embed: embed.Build());
+                Caches.Messages.LobbyMessages.Add(Messagae); // Use this for storing all called games.
+
+                if (Caches.Messages.LobbyMessages.Count() > Config.bot.MessageSize) // Only have x embed messages showing at a time.
+                {
+                    await Context.Channel.DeleteMessageAsync(Caches.Messages.LobbyMessages[0]);
+                    Caches.Messages.LobbyMessages.RemoveAt(0);
+                }
+            }
+        }
+
+        */
+
+        //------------------------------------------------------------------------------------------------------
+        //********************** Newest and Next are being combined here ***************************************
+
+        [Command("new")]
+        [Summary("Gets and displays [x] number of players who have the lowest\n " +
+                    "number of games played for the next lobbies.\nIf no number is provided, " +
+                    "the default will be used.\nA third argument can be passed for the password when passing a number." +
+                    "\nex: `new [password]` or `new [x] [password]`")]
+        [RequireUserPermission(GuildPermission.ManageChannels)]
+        public async Task New(string arg = "", [Remainder] string password = "")
+        {
+            #region Start checks
+            if (!Caches.Lobby.IsOpen)
+            {
+                await Context.Channel.SendMessageAsync("There is no open queue.");
+                return;
+            }
+            int count = 0;
+            int groupSize = Config.bot.GroupSize;
+            // Check for first argument: Is it a different group size number or just a password?
+            try
+            {
+                if (int.Parse(arg) < Config.bot.MaxSize)
+                    groupSize = int.Parse(arg);
+                else
+                    password = arg;
+            }
+            catch
+            {
+                password = arg;
+            }
+
+            // Check for number of active players
+            foreach (Player active in PlayerList.Playerlist)
+            {
+                if (active.IsActive && !active.IsBanned)
+                    count++;
+            }
+
+            if (PlayerList.RecentList.Any())
+            {
+                PlayerList.RecentList.Clear();
+            }
+
+            Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : lastcall - Active player count: {count}");
+
+            if (groupSize >= count)
+                groupSize = count;
+
+            #endregion
+
+            List<Player> players0 = new List<Player>();
+            List<Player> players1 = new List<Player>();
+            List<Player> playersToAdd = new List<Player>();
+            try
+            {
+                foreach (Player player in PlayerList.Playerlist)
+                {
+
+                    if (player.GamesPlayed == 0)
+                        players0.Add(player);
+                    else if (player.GamesPlayed == 1)
+                        players1.Add(player);
+
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : New - Failed to add players based on gamesPlayed");
+                Console.WriteLine(e.Message);
+            }
+            if (players0.Any())
+                foreach (Player player in players0)
+                    if (player.IsActive)
+                    {
+                        playersToAdd.Add(player);
+                        PlayerList.Playerlist.Remove(player);
+                    }
+            if (players1.Any())
+                foreach (Player player in players1)
+                    if (player.IsActive)
+                    {
+                        playersToAdd.Add(player);
+                        PlayerList.Playerlist.Remove(player);
+                    }
+
+            if (playersToAdd.Count < groupSize)
+            {
+                for (int x = 0; x < (Config.bot.GroupSize - playersToAdd.Count); x++)
+                {
+                    try
+                    {
+                        if (PlayerList.Playerlist[x].IsActive)
+                            playersToAdd.Add(PlayerList.Playerlist[x]);
+                            PlayerList.Playerlist.Remove(PlayerList.Playerlist[x]);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : New - Failed to add players from player list");
+                        Console.WriteLine(e.Message);
+                        Console.WriteLine($"");
+                    }
+                }
+            }
+
+            foreach (Player player in playersToAdd)
+            {
+                PlayerList.Playerlist.Add(player);
+            }
+
+
+            if (playersToAdd.Any() && playersToAdd.Count > 1)
+                playersToAdd.RemoveRange(groupSize, (playersToAdd.Count - groupSize));
+
+            await Context.Channel.TriggerTypingAsync();
+            var leader = Context.Guild.GetUser(Context.User.Id);
+
+            // Create and display embed for users selected for next game.
+
+
+            List<EmbedFieldBuilder> PlayerListField = new List<EmbedFieldBuilder>();
+            string mentions = "";
+
+
+
+            // Create and display embed for users selected for next game.
+            var embed = new EmbedBuilder().WithTitle($"{leader.Username}'s Next Lobby Group:")
+                .WithDescription($"Here are the next {groupSize} players for {leader.Username}'s lobby.\nThe password is: ` {password} `\n*Only join this lobby if your name is in this list!*")
+                .WithColor(Color.DarkGreen);
 
             foreach (Player player in playersToAdd)
             {
@@ -909,34 +1033,34 @@ namespace CustomsQueueBot.Core.Commands
                 field.WithName($"{user.Username} ({user.Nickname})")
                     .WithValue($"*--------------------------*")
                     .WithIsInline(true);
+
+                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] :: Newest: {user.Username} has been pulled.");
+
                 PlayerList.Playerlist.Remove(player);
                 PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].GamesPlayed += 1;
-
+                PlayerList.RecentList.Add(player);
                 if (!PlayerList.Playerlist.Contains(player))
                     PlayerList.Playerlist.Add(player);
 
                 mentions += $"{user.Mention} "; // @mentions the players
-                await user.SendMessageAsync($"You are in {leader.Nickname}'s lobby. The password is: ` {password} ` .");
+                await user.SendMessageAsync($"You are in `{leader.Username}'s` lobby. The password is: ` {password} ` .");
                 PlayerListField.Add(field);
             }
             foreach (EmbedFieldBuilder field in PlayerListField)
             {
                 embed.AddField(field);
-                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : LastCall: Adding fields to embed.");
+                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] :: Newest: Adding fields to embed.");
             }
 
             var Messagae = await Context.Channel.SendMessageAsync(mentions, embed: embed.Build());
             Caches.Messages.LobbyMessages.Add(Messagae); // Use this for storing all called games.
 
-            if (Caches.Messages.LobbyMessages.Count() > Config.bot.messagesize) // Only have x embed messages showing at a time.
+            if (Caches.Messages.LobbyMessages.Count() > Config.bot.MessageSize) // Only have x embed messages showing at a time.
             {
                 await Context.Channel.DeleteMessageAsync(Caches.Messages.LobbyMessages[0]);
                 Caches.Messages.LobbyMessages.RemoveAt(0);
             }
         }
-
-
-
 
 
         public class ConfigChecks
@@ -951,20 +1075,70 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             public void DeleteQueueMessages()
-            {
-                Task.Run(async () =>
+            {                    
+                try
                 {
-                    if (!(Caches.Messages.ReactionMessage is null))
-                        await Caches.Messages.ReactionMessage.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.ReactionMessage);  // Delete the message with reacts
-                    if (!(Caches.Messages.PlayerListEmbed is null))
-                        await Caches.Messages.PlayerListEmbed.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.PlayerListEmbed);
-                    if (!(Caches.Messages.ListCommandMessage is null))
-                        await Caches.Messages.ListCommandMessage.DeleteAsync();
-                    if (!(Caches.Messages.ListCommandMessage2 is null))
-                        await Caches.Messages.ListCommandMessage2.DeleteAsync();
-                    foreach (IMessage message in Caches.Messages.LobbyMessages)
-                        await message.DeleteAsync();
-                });
+                 if(   !Task.Run(async () =>
+                    {
+                        if (!(Caches.Messages.ReactionMessage is null))
+                        {
+                            await Caches.Messages.ReactionMessage.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.ReactionMessage);  // Delete the message with reacts
+                        
+                        }
+                        if (!(Caches.Messages.PlayerListEmbed is null))
+                        {
+                            await Caches.Messages.PlayerListEmbed.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.PlayerListEmbed);
+                        }
+                        
+                        if (!(Caches.Messages.ListCommandMessage is null))
+                        {
+                            await Caches.Messages.ListCommandMessage.DeleteAsync();
+                        }
+                        
+                        if (!(Caches.Messages.ListCommandMessage2 is null))
+                            {
+                            await Caches.Messages.ListCommandMessage2.DeleteAsync();
+                        }
+                        
+                        foreach (IMessage message in Caches.Messages.LobbyMessages)
+                            await message.DeleteAsync();
+
+                    }).IsCompletedSuccessfully
+                 )
+                    {
+                        if (!(Caches.Messages.ReactionMessage is null))
+                        {
+                            // Put logging in all of these
+                        }
+                        if (!(Caches.Messages.PlayerListEmbed is null))
+                        {
+
+                        }
+
+                        if (!(Caches.Messages.ListCommandMessage is null))
+                        {
+
+                        }
+
+                        if (!(Caches.Messages.ListCommandMessage2 is null))
+                        {
+
+                        }
+
+
+
+
+                    }
+                    else
+                    {
+                        // Put logging here
+                    }
+                }
+                catch(Exception e)
+                {
+
+
+                }
             }
         }
 

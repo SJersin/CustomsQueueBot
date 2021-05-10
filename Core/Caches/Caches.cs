@@ -22,7 +22,7 @@ namespace CustomsQueueBot.Caches
         public static IMessage LeastCommandMessage { get; set; }
         public static List<IMessage> LobbyMessages { get; set; } = new List<IMessage>();
         public static IMessage ListCommandMessage { get; set; }
-        public static RestUserMessage ListCommandMessage2 { get; internal set; }
+        public static IMessage ListCommandMessage2 { get; set; } // This is literally for the list command message. wtf was I thinking?? I wasn't high enough for this, clearly. Anyways, double check that I have properly deleted the messages/embeds BEFORE posting new ones. If you have done this, thank you and you may delete most of this stupid comment. Or leave the rest of it here so other people can wonder why they've kept on reading this far. If you're using word wrap, you're a cheater.
     }
 
     // public class DefaultResponses 

@@ -1,7 +1,7 @@
 ﻿/*
  * A player queue management bot originally designed for KamiVS weekly customs games
  * in the Hi-Rez team based hero shooter game, Paladins Champions of the Realm.
- * Will manage a large group of users in a first come, first serve list style with
+ * Will manage a large group of users in a list style with
  * many other functions to pull however many players you need for the next game lobby.
  * 
  * Has been designed so that arguments can be passed to accomidate other games such as
@@ -15,13 +15,51 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace CustomsQueueBot
 {
     class Program
     {
         static void Main(string[] args)
-            => new Bot().MainAsync().GetAwaiter().GetResult();
+        {
+            /*
+                var builder = new ConfigurationBuilder();
+                BuildConfig(builder);
+
+                Log.Logger = new LoggerConfiguration()
+                    .ReadFrom.Configuration(builder.Build())
+                    .Enrich.FromLogContext()
+                    .WriteTo.File(("Logs/log_" + DateTime.Today))      //Change to file?
+                    .CreateLogger();
+
+                Log.Logger.Information("Application Starting");
+
+                var host = Host.CreateDefaultBuilder()
+                    .ConfigureServices((context, services) =>
+                    {
+                        services.AddTransient<>();
+                    })
+                    .UseSerilog()
+                    .Build();
+            */
+
+            Bot bot = new Bot();
+            bot.MainAsync().GetAwaiter().GetResult();
+        } 
+            
+        static void BuildConfig(IConfigurationBuilder builder)
+        {
+            builder.SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+                .AddEnvironmentVariables();
+        }
+
     }
 }

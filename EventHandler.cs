@@ -36,7 +36,7 @@ namespace CustomsQueueBot
         private async Task Ready_Event()
         {
             Console.WriteLine($"{DateTime.Now} => [READY_EVENT] : {Client.CurrentUser.Username} is ready."); // Remember, consistancy is ImPoRtAnT.
-            await Client.SetGameAsync($"{Config.bot.prefix}help"); // Shows the prefix and "help" under Username.
+            await Client.SetGameAsync($"{Config.bot.Prefix}help"); // Shows the prefix and "help" under Username.
             await Client.SetStatusAsync(UserStatus.Online); //Set the bot as online (enumerator)
         }
 
@@ -57,7 +57,7 @@ namespace CustomsQueueBot
             if (!(_message is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
 
-            // Bans oVerbosity
+            // Bans Verb
             if (message.Author.Id == 254809263405269005)
             {
                 Random random = new Random();
@@ -72,7 +72,7 @@ namespace CustomsQueueBot
             
 
             int ArgPos = 0;
-            if (!(Message.HasStringPrefix(Config.bot.prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos))) return; //Ignore non-prefixed messages or bot @mention(?)
+            if (!(Message.HasStringPrefix(Config.bot.Prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos))) return; //Ignore non-prefixed messages or bot @mention(?)
 
             var Result = await Commands.ExecuteAsync(Context, ArgPos, _Services); // Third arguement set IServices. Use null if not using an IService.
             if (!Result.IsSuccess && Result.Error != CommandError.UnknownCommand)
@@ -102,11 +102,11 @@ namespace CustomsQueueBot
                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Bot check: Passed.");
                     if (reaction == null || Caches.Messages.ReactionMessage == null) return;
                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Null or Empty message check: Passed.");
-                    if (!user.Roles.Any(r => r.Name == Config.bot.role)) return; //ignore users who don't have the proper role. Don't know exactly if this is needed yet.
+                    if (!user.Roles.Any(r => r.Name == Config.bot.Role)) return; //ignore users who don't have the proper role. Don't know exactly if this is needed yet.
 
                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Role check: Passed.");
 
-                    var emoji = new Emoji(Config.bot.reaction);  //"👍"
+                    var emoji = new Emoji(Config.bot.Reaction);  //"👍"
                                                                  //var emote = Emote.Parse();
                     bool exists = false;
                     Player playerCheck = new Player();
@@ -131,7 +131,7 @@ namespace CustomsQueueBot
                     //------------------------------------------------------
                     */
 
-                    if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.role))
+                    if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.Role))
                     {
                         playerCheck.DiscordID = user.Id;
                         playerCheck.DiscordName = user.Username;
@@ -152,7 +152,7 @@ namespace CustomsQueueBot
                             }
                         }
                         Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordName}: {playerCheck.DiscordID}.");
-                        if (playerCheck.DiscordID == 0 && user.Roles.Any(r => r.Name == Config.bot.role)) //Player not found in DB
+                        if (playerCheck.DiscordID == 0 && user.Roles.Any(r => r.Name == Config.bot.Role)) //Player not found in DB
                         {
                             playerCheck.DiscordID = user.Id;
                             playerCheck.DiscordName = user.Username;
@@ -168,7 +168,7 @@ namespace CustomsQueueBot
                         {
                             foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list
                             {
-                                if (player.DiscordID == playerCheck.DiscordID && user.Roles.Any(r => r.Name == Config.bot.role))
+                                if (player.DiscordID == playerCheck.DiscordID && user.Roles.Any(r => r.Name == Config.bot.Role))
                                 {
                                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
                                     player.IsActive = true;

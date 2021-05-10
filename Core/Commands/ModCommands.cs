@@ -438,7 +438,7 @@ namespace CustomsQueueBot.Core.Commands
         }
 */
 
-        [Command("qstat")]
+        [Command("stats")]
         [Alias("qstats")]
         [Summary(": Displays the total stats of the currently opened queue.")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
@@ -474,7 +474,7 @@ namespace CustomsQueueBot.Core.Commands
        
             var field2 = new EmbedFieldBuilder();
             field2.WithName("Queue Uptime:")
-                .WithValue($"{uptime.Hours} h {uptime.Minutes} m");
+                .WithValue($"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m");
             embed.AddField(field2);
 
             await Context.Channel.SendMessageAsync(embed: embed.Build());
@@ -582,9 +582,20 @@ namespace CustomsQueueBot.Core.Commands
                 mentions += $"{user.Mention} "; // @mentions the players
             }
 
-            mentions += "\n\nLast call for your game! Join the lobby soon or you will forfeit your spot. If you are having issue, please contact a mod.";
+            mentions += "\n\nLast call for your game! Join the lobby soon or you will forfeit your spot. If you are having issue, please contact a mod. " +
+                "If you are already in the game, please disregard this message.";
 
-            await Context.Channel.SendMessageAsync(mentions);
+            try
+            {
+                await Context.Channel.SendMessageAsync(mentions);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Recall embed failed to send.");
+                Console.WriteLine(e.Message);
+
+            }
+            
             
         }
 
