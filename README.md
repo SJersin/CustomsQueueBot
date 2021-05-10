@@ -11,9 +11,12 @@ Discord.Net bot for managing a user pool for size limited games. (Paladins, Over
 # Release Notes:
 
   0.8.1
-  1.Renamed "Newest" to "New" which combined the functionality of "Next" and "Newest" commands.
-  2.Added a 'maximum number of players to be pulled' setting in the bot config. This is mostly to allow for numeric passwords. Default is 10.
-  3.Began implementing logging services with Serilog. Why not, right?
+  
+  1. Renamed "Newest" to "New" which combined the functionality of "Next" and "Newest" commands.
+
+  2. Added a 'maximum number of players to be pulled' setting in the bot config. This is mostly to allow for numeric passwords. Default is 10.
+  
+  3. Began implementing logging services with Serilog. Why not, right?
 
   0.7.1
   1. Added a minimum number of games to play setting in the bot config. Defaults to 2.
