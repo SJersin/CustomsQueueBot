@@ -28,32 +28,12 @@ namespace CustomsQueueBot
     {
         static void Main(string[] args)
         {
-            /*
-                var builder = new ConfigurationBuilder();
-                BuildConfig(builder);
-
-                Log.Logger = new LoggerConfiguration()
-                    .ReadFrom.Configuration(builder.Build())
-                    .Enrich.FromLogContext()
-                    .WriteTo.File(("Logs/log_" + DateTime.Today))      //Change to file?
-                    .CreateLogger();
-
-                Log.Logger.Information("Application Starting");
-
-                var host = Host.CreateDefaultBuilder()
-                    .ConfigureServices((context, services) =>
-                    {
-                        services.AddTransient<>();
-                    })
-                    .UseSerilog()
-                    .Build();
-            */
 
             Bot bot = new Bot();
             bot.MainAsync().GetAwaiter().GetResult();
         } 
             
-        static void BuildConfig(IConfigurationBuilder builder)
+        public static void BuildConfig(IConfigurationBuilder builder)
         {
             builder.SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)

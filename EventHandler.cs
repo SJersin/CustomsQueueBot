@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
+using System.Timers;
 
 namespace CustomsQueueBot
 {
@@ -56,21 +57,7 @@ namespace CustomsQueueBot
             // Ignore system messages, or messages from other bots
             if (!(_message is SocketUserMessage message)) return;
             if (message.Source != MessageSource.User) return;
-
-            // Bans Verb
-            if (message.Author.Id == 254809263405269005)
-            {
-                Random random = new Random();
-                int rand = random.Next(1001);
-                if (rand == 69 || rand == 420)
-                {
-                    await Context.Channel.SendMessageAsync("YOU'VE BEEN B& YOU SILLY BOT!!");
-                    return;
-                }
-            }
-
-            
-
+           
             int ArgPos = 0;
             if (!(Message.HasStringPrefix(Config.bot.Prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos))) return; //Ignore non-prefixed messages or bot @mention(?)
 
@@ -133,11 +120,10 @@ namespace CustomsQueueBot
 
                     if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.Role))
                     {
-                        playerCheck.DiscordID = user.Id;
-                        playerCheck.DiscordName = user.Username;
-                        playerCheck.Nickname = user.Nickname;
+
                         playerCheck.IsActive = true;
                         playerCheck.EntryTime = DateTime.Now;
+                        playerCheck.GuildUser = user;
                         PlayerList.Playerlist.Add(playerCheck);
                         PlayerList.PlayerlistDB.Add(playerCheck);
                         await UpdateMethods.Update.PlayerList();
@@ -146,19 +132,17 @@ namespace CustomsQueueBot
                     {
                         foreach (Player player in PlayerList.PlayerlistDB)
                         {
-                            if (player.DiscordID == user.Id)  // Check if player is in the userbase
+                            if (player.GuildUser.Id == user.Id)  // Check if player is in the userbase
                             {
                                 playerCheck = player;
                             }
                         }
-                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.DiscordName}: {playerCheck.DiscordID}.");
-                        if (playerCheck.DiscordID == 0 && user.Roles.Any(r => r.Name == Config.bot.Role)) //Player not found in DB
+                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.GuildUser.Username}: {playerCheck.GuildUser.Id}.");
+                        if (playerCheck.GuildUser.Id == 0 && user.Roles.Any(r => r.Name == Config.bot.Role)) //Player not found in DB
                         {
-                            playerCheck.DiscordID = user.Id;
-                            playerCheck.DiscordName = user.Username;
-                            playerCheck.Nickname = user.Nickname;
                             playerCheck.IsActive = true;
                             playerCheck.EntryTime = DateTime.Now;
+                            playerCheck.GuildUser = user;
                             PlayerList.Playerlist.Add(playerCheck);
                             PlayerList.PlayerlistDB.Add(playerCheck);
                             await UpdateMethods.Update.PlayerList();
@@ -168,7 +152,7 @@ namespace CustomsQueueBot
                         {
                             foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list
                             {
-                                if (player.DiscordID == playerCheck.DiscordID && user.Roles.Any(r => r.Name == Config.bot.Role))
+                                if (player.GuildUser.Id == playerCheck.GuildUser.Id && user.Roles.Any(r => r.Name == Config.bot.Role))
                                 {
                                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
                                     player.IsActive = true;
@@ -180,11 +164,10 @@ namespace CustomsQueueBot
                     }
                     else if (!exists)
                     {
-                        playerCheck.DiscordID = user.Id;
-                        playerCheck.DiscordName = user.Username;
-                        playerCheck.Nickname = user.Nickname;
+
                         playerCheck.IsActive = true;
                         playerCheck.EntryTime = DateTime.Now;
+                        playerCheck.GuildUser = user;
                         PlayerList.Playerlist.Add(playerCheck);
                         PlayerList.PlayerlistDB.Add(playerCheck);
                         await UpdateMethods.Update.PlayerList();
@@ -228,7 +211,7 @@ namespace CustomsQueueBot
                 foreach (Player player in PlayerList.Playerlist)
                 {
                     Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: Playerlist ForEach~~.");
-                    if (player.DiscordID == user.Id)
+                    if (player.GuildUser.Id == user.Id)
                     {
                         Console.WriteLine($"{DateTime.Now} at ReactionRemoved in EventHandler: User check: Passed.");
                         player.IsActive = false;
@@ -243,6 +226,7 @@ namespace CustomsQueueBot
         
         }
 
+        
 
 
     }

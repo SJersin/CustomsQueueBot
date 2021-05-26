@@ -8,11 +8,9 @@ namespace CustomsQueueBot
 {
     public class Player
     {
-        private string nickname;
-        private string discordName;
+
         private int gamesPlayed;
         private int elo;
-        private ulong discordID;
         private bool isActive;
         private int playerLevel;
         private bool playsTank;
@@ -22,14 +20,12 @@ namespace CustomsQueueBot
         private bool isBanned;
         private string bannedReason;
         private DateTime entryTime;
+        private SocketGuildUser guildUser;
 
         public Player()
         {
-            Nickname = "";
-            DiscordName = "";
             GamesPlayed = 0;
             Elo = 0;
-            DiscordID = 0;
             PlayerLevel = 0;
             IsActive = true;
             PlaysTank = false;
@@ -40,9 +36,7 @@ namespace CustomsQueueBot
             BannedReason = "";
 
         }
-        public ulong DiscordID { get => discordID; set => discordID = value; }
-        public string Nickname { get => nickname; set => nickname = value; }
-        public string DiscordName { get => discordName; set => discordName = value; }
+
         public int GamesPlayed { get => gamesPlayed; set => gamesPlayed = value; }
         public int Elo { get => elo; set => elo = value; }
         public bool IsActive { get => isActive; set => isActive = value; }
@@ -54,15 +48,7 @@ namespace CustomsQueueBot
         public bool IsBanned { get => isBanned; set => isBanned = value; }
         public string BannedReason { get => bannedReason; set => bannedReason = value; }
         public DateTime EntryTime { get => entryTime; set => entryTime = value; }
-    }
-
-    // Global Player class List 
-    public class PlayerList
-    {
-        public static List<Player> Playerlist { get; set; } = new List<Player>();
-        public static List<Player> PlayerlistDB { get; set; } = new List<Player>();
-        public static List<Player> Bannedlist { get; set; } = new List<Player>();
-        public static List<Player> RecentList { get; set; } = new List<Player>();
+        public SocketGuildUser GuildUser { get => guildUser; set => guildUser = value; }
     }
 
     public class UpdateMethods
@@ -92,7 +78,7 @@ namespace CustomsQueueBot
             {
                     Player player = CustomsQueueBot.PlayerList.Playerlist[x];
                     var field = new EmbedFieldBuilder();
-                    field.WithName($"{player.Nickname} ({player.DiscordName})")
+                    field.WithName($"{player.GuildUser.Nickname} ({player.GuildUser.Username})")
                         .WithValue($"Status: {(player.IsActive ? "Active" : "`Inactive`")}\nPosition: {counter}\n-----------------------")
                         .WithIsInline(true);
                     counter++;
