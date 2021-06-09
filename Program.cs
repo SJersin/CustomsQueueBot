@@ -28,11 +28,26 @@ namespace CustomsQueueBot
     {
         static void Main(string[] args)
         {
+            var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .Build();
 
-            Bot bot = new Bot();
-            bot.MainAsync().GetAwaiter().GetResult();
-        } 
-            
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .WriteTo.File($"Log_{DateTime.Now}")
+                .CreateLogger();
+
+            try 
+            {
+                Bot bot = new Bot();
+                bot.MainAsync().GetAwaiter().GetResult();
+
+            }
+            catch(Exception e)
+            {
+                Log.Fatal($"Bot could not start: {e.Message}");
+            }
+        }
         public static void BuildConfig(IConfigurationBuilder builder)
         {
             builder.SetBasePath(Directory.GetCurrentDirectory())

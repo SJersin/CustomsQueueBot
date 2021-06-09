@@ -118,7 +118,7 @@ namespace CustomsQueueBot
                     //------------------------------------------------------
                     */
 
-                    if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.Role))
+                    if (PlayerList.Playerlist.Count == 0 && user.Roles.Any(r => r.Name == Config.bot.Role)) // If list is empty and user has proper role.
                     {
 
                         playerCheck.IsActive = true;
@@ -128,17 +128,24 @@ namespace CustomsQueueBot
                         PlayerList.PlayerlistDB.Add(playerCheck);
                         await UpdateMethods.Update.PlayerList();
                     }
-                    else if (PlayerList.Playerlist.Count > 0)
+                    else if (PlayerList.Playerlist.Count > 0) // If list isn't empty...
                     {
-                        foreach (Player player in PlayerList.PlayerlistDB)
+                        try
                         {
-                            if (player.GuildUser.Id == user.Id)  // Check if player is in the userbase
+                            foreach (Player player in PlayerList.PlayerlistDB)
                             {
-                                playerCheck = player;
+                                if (player.GuildUser.Id == user.Id)  // Check if player is in the userbase
+                                {
+                                    exists = true;
+                                }
                             }
                         }
-                        Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player Check returns: {playerCheck.GuildUser.Username}: {playerCheck.GuildUser.Id}.");
-                        if (playerCheck.GuildUser.Id == 0 && user.Roles.Any(r => r.Name == Config.bot.Role)) //Player not found in DB
+                        catch
+                        {
+                            exists = false;
+                        }
+
+                        if (!exists && user.Roles.Any(r => r.Name == Config.bot.Role)) //Player not found in DB
                         {
                             playerCheck.IsActive = true;
                             playerCheck.EntryTime = DateTime.Now;
@@ -150,9 +157,9 @@ namespace CustomsQueueBot
                         }
                         else
                         {
-                            foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list
+                            foreach (Player player in PlayerList.Playerlist)  // Check if player is in the list and switch to active if found.
                             {
-                                if (player.GuildUser.Id == playerCheck.GuildUser.Id && user.Roles.Any(r => r.Name == Config.bot.Role))
+                                if (exists && user.Roles.Any(r => r.Name == Config.bot.Role))
                                 {
                                     Console.WriteLine($"{DateTime.Now} at ReactionAdded in EventHandler: Player found. Switching status to active.");
                                     player.IsActive = true;

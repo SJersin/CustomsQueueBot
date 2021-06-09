@@ -82,7 +82,7 @@ namespace CustomsQueueBot.Core.Commands
             foreach (Player player in PlayerList.Playerlist)
             {
                 count++;
-                if (player.DiscordID == (ulong)user.Id)
+                if (player.GuildUser.Id == (ulong)user.Id)
                 {
 
 
@@ -120,7 +120,7 @@ namespace CustomsQueueBot.Core.Commands
                 Console.WriteLine("DEBUG: ForLoop (DB) Start");
                 foreach (Player player in PlayerList.PlayerlistDB)
                 {
-                    if (player.DiscordID == user.Id)
+                    if (player.GuildUser.Id == user.Id)
                     {
                         quitter = player;
                         PlayerList.PlayerlistDB.Remove(quitter);
@@ -129,7 +129,7 @@ namespace CustomsQueueBot.Core.Commands
                 }
                 foreach (Player player in PlayerList.Playerlist)
                 {
-                    if (player.DiscordID == user.Id)
+                    if (player.GuildUser.Id == user.Id)
                     {
                         quitter = player;
                         PlayerList.Playerlist.Remove(quitter);
@@ -153,7 +153,7 @@ namespace CustomsQueueBot.Core.Commands
         }
         
         [Command("status")]
-        [Summary(": Change your active status between active and inactive. \nex: +status")]
+        [Summary(": Check your active status. \nex: +status")]
         public async Task SetActiveStatus()
         {
             if (!Caches.Lobby.IsOpen)
@@ -168,63 +168,18 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.Playerlist)
             {
-                if (player.DiscordID == user.Id) // Find their player data
+                if (player.GuildUser.Id == user.Id) // Find their player data
                 {
                     if (player.IsActive) // Set to inactive
                     {
-                        player.IsActive = false;
-                        PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
-                        await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateMethods.Update.PlayerList();
-                        return; 
-                    }
-                    else if (!player.IsActive) // Set to active
-                    {
-                        player.IsActive = true;
-                        PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = true;
-                        await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
-                        await UpdateMethods.Update.PlayerList();
+                        await Context.Channel.SendMessageAsync($"Player {player.GuildUser.Username} is currently {(player.IsActive ? "active" : "inactive")}.");
                         return;
-
                     }
                 }
             }
 
             await Context.Channel.SendMessageAsync("Player not found in the list.");
         }
-
-
-        /*      [Command("join")]
-                [Summary("Command alternative to joining the queue.\n[NOT IMPLEMENTED]")]
-                public async Task JoinQueue()
-                {
-                    if (!Caches.IsOpen.isOpen)
-                    {
-                        await Context.Channel.SendMessageAsync("There is no open queue.");
-                        return;
-                    }
-                    var _user = Context.Guild.GetUser(Context.User.Id);
-
-                    foreach (Player player in PlayerList.PlayerlistDB)
-                    {
-                        if (player.DiscordID == _user.Id)
-                        {
-                            await Context.Channel.SendMessageAsync("You're already in the queue.");
-                            return;
-                        }
-                    }
-
-                    Player newPlayer = new Player();
-                    newPlayer.DiscordID = _user.Id;
-                    newPlayer.Nickname = _user.Username;
-                    PlayerList.Playerlist.Add(newPlayer);
-                    PlayerList.PlayerlistDB.Add(newPlayer);
-                    await Context.Channel.SendMessageAsync("You have been added to the queue.");
-                      }
-
-                 */
-
-
 
     }
 }

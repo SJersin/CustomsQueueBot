@@ -8,6 +8,12 @@ using System.Linq;
 using Discord.WebSocket;
 
 /*
+ * 0.8.3
+ * 
+ * Changed Recall to accept a message from the mod. or nothing at all with no message.
+ * 
+ * 
+ * 
  * 0.6c - Changes to file:
  * 
  * - Added qstats command.
@@ -51,13 +57,13 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.Playerlist)
             {
-                if (player.DiscordID == user.Id)
+                if (player.GuildUser.Id == user.Id)
                 {
                     if (player.IsActive)
                     {
                         player.IsActive = false;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = false;
-                        await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
+                        await Context.Channel.SendMessageAsync($"Player {player.GuildUser.Username} has been set to {(player.IsActive ? "active" : "inactive")}.");
                         await UpdateMethods.Update.PlayerList();
                         return;
                     }
@@ -65,7 +71,7 @@ namespace CustomsQueueBot.Core.Commands
                     {
                         player.IsActive = true;
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsActive = true;
-                        await Context.Channel.SendMessageAsync($"Player {player.Nickname} has been set to {(player.IsActive ? "active" : "inactive")}.");
+                        await Context.Channel.SendMessageAsync($"Player {player.GuildUser.Username} has been set to {(player.IsActive ? "active" : "inactive")}.");
                         await UpdateMethods.Update.PlayerList();
                         return;
 
@@ -109,19 +115,19 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player check in PlayerList.PlayerlistDB)
             {
-                if (check.DiscordID == _user.Id)
+                if (check.GuildUser.Id == _user.Id)
                 {
                     foreach (Player player in PlayerList.Playerlist)
                     {
-                        if (player.DiscordID == _user.Id)
+                        if (player.GuildUser.Id == _user.Id)
                         {
-                            await Context.Channel.SendMessageAsync($"{player.Nickname} is already in the list at number {(PlayerList.Playerlist.IndexOf(player) + 1)}.");
+                            await Context.Channel.SendMessageAsync($"{player.GuildUser.Username} is already in the list at number {(PlayerList.Playerlist.IndexOf(player) + 1)}.");
                             return;
                         }
                         else
                         {
                             PlayerList.Playerlist.Add(check);
-                            await Context.Channel.SendMessageAsync($"{check.Nickname} has been added to the list.");
+                            await Context.Channel.SendMessageAsync($"{check.GuildUser.Username} has been added to the list.");
                             return;
                         }
                     }
@@ -129,16 +135,15 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             Player player1 = new Player();
-            player1.DiscordName = _user.Username;
-            player1.Nickname = _user.Nickname;
-            player1.DiscordID = _user.Id;
+
             player1.IsActive = isActive;
             player1.EntryTime = DateTime.Now;
+            player1.GuildUser = _user;
 
             PlayerList.Playerlist.Add(player1);
             PlayerList.PlayerlistDB.Add(player1);
 
-            await Context.Channel.SendMessageAsync($"{player1.Nickname} has been added to the queue.");
+            await Context.Channel.SendMessageAsync($"{player1.GuildUser.Username} has been added to the queue.");
             await UpdateMethods.Update.PlayerList();
         }
 
@@ -173,11 +178,11 @@ namespace CustomsQueueBot.Core.Commands
             // Search user list for username
             foreach (Player player in PlayerList.Playerlist)
             {
-                if (player.DiscordID == _user.Id)   // Remove user from list
+                if (player.GuildUser.Id == _user.Id)   // Remove user from list
                 {
                     PlayerList.Playerlist.Remove(player);
                     PlayerList.PlayerlistDB.Remove(player);
-                    embed.WithDescription($"{player.Nickname} has been removed from the queue.\nReason: {reason}")
+                    embed.WithDescription($"{player.GuildUser.Username} has been removed from the queue.\nReason: {reason}")
                         .WithColor(Color.DarkRed);
                 //    await _user.SendMessageAsync($"You have been removed from the queue.\nReason: {reason}");
                     break;
@@ -230,19 +235,19 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player check in PlayerList.PlayerlistDB)
             {
-                if (check.DiscordID == _user.Id)
+                if (check.GuildUser.Id == _user.Id)
                 {
                     foreach (Player player in PlayerList.Playerlist)
                     {
-                        if (player.DiscordID == _user.Id)
+                        if (player.GuildUser.Id == _user.Id)
                         {
-                            await Context.Channel.SendMessageAsync($"{player.Nickname} is already in the list at number {(PlayerList.Playerlist.IndexOf(player) + 1)}.");
+                            await Context.Channel.SendMessageAsync($"{player.GuildUser.Username} is already in the list at number {(PlayerList.Playerlist.IndexOf(player) + 1)}.");
                             return;
                         }
                         else
                         {
                             PlayerList.Playerlist.Add(check);
-                            await Context.Channel.SendMessageAsync($"{check.Nickname} has been added to the list.");
+                            await Context.Channel.SendMessageAsync($"{check.GuildUser.Username} has been added to the list.");
                             return;
                         }
                     }
@@ -250,15 +255,13 @@ namespace CustomsQueueBot.Core.Commands
             }
 
             Player player1 = new Player();
-            player1.DiscordName = _user.Username;
-            player1.Nickname = _user.Nickname;
-            player1.DiscordID = _user.Id;
+            player1.GuildUser = _user;
             player1.IsActive = isActive;
 
             PlayerList.Playerlist.Add(player1);
             PlayerList.PlayerlistDB.Add(player1);
 
-            await Context.Channel.SendMessageAsync($"{player1.Nickname} has been added to the queue.");
+            await Context.Channel.SendMessageAsync($"{player1.GuildUser.Username} has been added to the queue.");
 
         }
 
@@ -291,13 +294,13 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.Playerlist)
             {
-                if (player.DiscordID == _user.Id)
+                if (player.GuildUser.Id == _user.Id)
                 {
                     location = PlayerList.Playerlist.IndexOf(player);
                     PlayerList.Playerlist.Remove(player);
                     PlayerList.Playerlist.Insert(position, player);
 
-                    embed.WithTitle($"{player.DiscordName} has been moved")
+                    embed.WithTitle($"{player.GuildUser.Username} has been moved")
                         .WithDescription($" from position {location + 1} to {position + 1}.");
 
                     await Context.Channel.SendMessageAsync(embed: embed.Build());
@@ -339,7 +342,7 @@ namespace CustomsQueueBot.Core.Commands
             // Search user list for username
             foreach (Player player in PlayerList.PlayerlistDB)
             {
-                if (player.DiscordID == _user.Id)   // Remove user from list
+                if (player.GuildUser.Id == _user.Id)   // Remove user from list
                 {
                     player.IsBanned = true;
                     player.BannedReason = reason;
@@ -347,7 +350,7 @@ namespace CustomsQueueBot.Core.Commands
                         PlayerList.Playerlist.Remove(player);
                     PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsBanned = true;
                     PlayerList.Bannedlist.Add(player);
-                    embed.WithDescription($"{player.DiscordName} has been banned from the queue.\nReason: {reason}")
+                    embed.WithDescription($"{player.GuildUser.Username} has been banned from the queue.\nReason: {reason}")
                         .WithColor(Color.DarkRed);
                     await _user.SendMessageAsync($"You have been banned from the queue.\nReason: {reason}");
                     break;
@@ -384,13 +387,13 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.Bannedlist)
             {
-                if (player.DiscordID == _user.Id)
+                if (player.GuildUser.Id == _user.Id)
                 {
                     if (PlayerList.PlayerlistDB.Contains(player))
                     {
                         PlayerList.PlayerlistDB[PlayerList.PlayerlistDB.IndexOf(player)].IsBanned = false;
                         PlayerList.Bannedlist.Remove(player);
-                        embed.WithDescription($"{player.Nickname}'s ban has been lifted.")
+                        embed.WithDescription($"{player.GuildUser.Username}'s ban has been lifted.")
                             .WithColor(Color.DarkRed);
                         await _user.SendMessageAsync($"Your ban from the queue has been lifted.");
                         break;
@@ -507,10 +510,11 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.PlayerlistDB)
             {
-                if (player.DiscordID == _user.Id)
+                if (player.GuildUser.Id == _user.Id)
                 {
                     player.GamesPlayed++;
-                    await Context.Channel.SendMessageAsync($"{player.DiscordName} ({player.Nickname})'s game count incremented by 1.");
+                    await Context.Channel.SendMessageAsync($"{player.GuildUser.Username} ({player.GuildUser.Username})'s game count incremented by 1.");
+                    break;
                 }
             }
         }
@@ -518,7 +522,7 @@ namespace CustomsQueueBot.Core.Commands
         [Command("gp-")]
         [Summary(": Subtracts one from the games played counter of provided user\nAccepts either @mentions or User IDs.")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task GamesPlayedSubtracts(string userID)
+        public async Task GamesPlayedSubtract(string userID)
         {
             if (!Caches.Lobby.IsOpen)
             {
@@ -542,15 +546,20 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in PlayerList.PlayerlistDB)
             {
-                if (player.DiscordID == _user.Id)
+                if (player.GuildUser.Id == _user.Id)
                 {
                     if (player.GamesPlayed > 0)
                     { 
                         player.GamesPlayed--; 
-                        await Context.Channel.SendMessageAsync($"{player.DiscordName} ({player.Nickname})'s game count decremented by 1.");
+                        await Context.Channel.SendMessageAsync($"{player.GuildUser.Username} ({player.GuildUser.Username})'s game count decremented by 1.");
+                        break;
                     }
+                    else
+                        await Context.Channel.SendMessageAsync($"Failed to decrement.");
                 }
+                
             }
+
         }
 
         /*        [Command("test")]
@@ -567,7 +576,7 @@ namespace CustomsQueueBot.Core.Commands
         [Command("recall")]
         [Summary(": Announces the last group called by Next or Random again.")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task RecallList()
+        public async Task RecallList([Remainder] string msg = "")
         {
             if (!Caches.Lobby.IsOpen)
             {
@@ -577,13 +586,9 @@ namespace CustomsQueueBot.Core.Commands
 
             string mentions = "";
             foreach (Player player in PlayerList.RecentList)
-            {
-                var user = Context.Guild.GetUser(player.DiscordID);
-                mentions += $"{user.Mention} "; // @mentions the players
-            }
-
-            mentions += "\n\nLast call for your game! Join the lobby soon or you will forfeit your spot. If you are having issue, please contact a mod. " +
-                "If you are already in the game, please disregard this message.";
+                mentions += $"{player.GuildUser.Mention} "; // @mentions the players
+            
+            mentions += $"\n\n{msg}";
 
             try
             {

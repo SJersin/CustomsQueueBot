@@ -10,19 +10,12 @@
  *
  */
 using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Linq; //Using Lists
 using System.IO;
 using Newtonsoft.Json;  //Using Json files
 
 namespace CustomsQueueBot
 {
-
-    public class Version
-    {
-        public static string GetVersion { get; } = "0.8.1";
-    }
 
     class Config
     {
@@ -37,12 +30,16 @@ namespace CustomsQueueBot
 
             if (!File.Exists(configFolder + "/" + configFile)) //Create file
             {
-                bot = new BotConfig();
-                bot.Prefix = "+";
-                bot.GroupSize = 8;
-                bot.MaxSize = 10;
-                bot.MessageSize = 2;
-                bot.MinGamesPlayed = 2;
+                bot = new BotConfig
+                {
+                    Prefix = "+",
+                    GroupSize = 8,
+                    MaxSize = 10,
+                    MessageSize = 2,
+                    MinGamesPlayed = 2,
+                    NumberOfVotes = 3
+                };
+
                 string json = JsonConvert.SerializeObject(bot, Formatting.Indented); //Json file creation
                 File.WriteAllText(configFolder + "/" + configFile, json);
             }
@@ -66,13 +63,15 @@ namespace CustomsQueueBot
         public int MaxSize { get; set; }
         public int MessageSize { get; set; }
         public int MinGamesPlayed { get; set; }
+        public int NumberOfVotes { get; set; }
 
         public override string ToString()
         {
             string toReturn = "";
 
             toReturn += "Prefix:\t" + Prefix + "\nReaction:\t" + Reaction + "\nRole:\t" + Role + "\nGroup size:\t" + GroupSize +
-                "\nMax group size:\t" + MaxSize + "\nMessage cache size:\t" + MessageSize + "\nMin # of games:\t" + MinGamesPlayed;
+                "\nMax group size:\t" + MaxSize + "\nMessage cache size:\t" + MessageSize + "\nMin # of games:\t" + MinGamesPlayed +
+                "\nVote Count:\t" + NumberOfVotes;
 
 
             return toReturn;

@@ -44,7 +44,7 @@ namespace CustomsQueueBot.Core.Database
             string query = "INSERT INTO users (id, ) VALUES (@id, )";
             SQLiteCommand command = new SQLiteCommand(query, Db.Connection);
             Db.OpenConnection();
-            command.Parameters.AddWithValue("@id", player.DiscordID);
+   //         command.Parameters.AddWithValue("@id", player.GuildUser.Id);
             command.Parameters.AddWithValue("@ign", player.InGameName);
             command.Parameters.AddWithValue("@level", player.PlayerLevel);
             command.Parameters.AddWithValue("@isTank", player.PlaysFrontline);
@@ -71,7 +71,7 @@ namespace CustomsQueueBot.Core.Database
             if(Result.HasRows)
                 while (Result.Read())
                 {
-                    player.DiscordID = id;
+ //                   player.GuildUser.Id = id;
                     player.InGameName = Result["ign"].ToString();
                     player.PlayerLevel = Convert.ToInt32(Result["level"].ToString());
                     player.PlaysFrontline = Convert.ToInt32(Result["isTank"].ToString());

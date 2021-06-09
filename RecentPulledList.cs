@@ -31,7 +31,7 @@ namespace CustomsQueueBot
                 var user = player.GuildUser;
                 var role = user.Guild.Roles.FirstOrDefault(r => r.Name == "Pulled");
                 await user.RemoveRoleAsync(role);
-        }
+            }
 
 
         }
