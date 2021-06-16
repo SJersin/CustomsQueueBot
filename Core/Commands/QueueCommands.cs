@@ -85,7 +85,7 @@ namespace CustomsQueueBot.Core.Commands
         [Alias("Create")]
         [Summary(": Create a new queue for users to join.\nYou must pass a user role @mention.\nex: `create @customs`")]
         [RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task NewQueue(IRole role, [Remainder] string fuindy = "")
+        public async Task NewQueue(IRole role, [Remainder] string fudulgy = "")
         {
             await Context.Channel.TriggerTypingAsync();
             Timer timer = new Timer(120000); // Timer for auto-posting list embed
@@ -132,7 +132,7 @@ namespace CustomsQueueBot.Core.Commands
         {
             if (Caches.Lobby.IsOpen)
             {
-                Context.Channel.TriggerTypingAsync();
+                await Context.Channel.TriggerTypingAsync();
                 PlayerList.Playerlist.Clear();
                 PlayerList.PlayerlistDB.Clear();
                 PlayerList.Bannedlist.Clear();
@@ -385,7 +385,7 @@ namespace CustomsQueueBot.Core.Commands
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 return;
             }
-            Context.Channel.TriggerTypingAsync();
+            await Context.Channel.TriggerTypingAsync();
 
             List<Player> playersOrdered = new List<Player>();
             var embed = new EmbedBuilder();
@@ -454,15 +454,13 @@ namespace CustomsQueueBot.Core.Commands
         public async Task ShowQueueList()
         {
 
-
-
             if (!Caches.Lobby.IsOpen)
             {
                 await Context.Channel.SendMessageAsync("There is no open queue.");
                 Console.WriteLine($"{DateTime.Now} at list in QueueCommands: No open queue.");
                 return;
             }
-            Context.Channel.TriggerTypingAsync();
+            await Context.Channel.TriggerTypingAsync();
                                  
             try
             {
@@ -628,7 +626,7 @@ namespace CustomsQueueBot.Core.Commands
 
             // Pull the next group from the queue list and displays their names.
 
-            Context.Channel.TriggerTypingAsync();
+            await Context.Channel.TriggerTypingAsync();
 
             var leader = Context.Guild.GetUser(Context.User.Id);
 
@@ -997,7 +995,7 @@ namespace CustomsQueueBot.Core.Commands
                 groupSize = count;
 
             #endregion
-            Context.Channel.TriggerTypingAsync();
+            await Context.Channel.TriggerTypingAsync();
 
             List<Player> playersToAdd = new List<Player>();
             //   Timer timer = new Timer(60000);         
@@ -1019,14 +1017,15 @@ namespace CustomsQueueBot.Core.Commands
 
             if (playersToAdd.Count < groupSize) // Fill the empty space.
             {
-                Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : New - Fill section: {playersToAdd.Count} players in ToAdd list");
+                Console.WriteLine("{DateTimeNow} => [DEBUGGING] : New - Fill section: {playersToAdd.Count} players in ToAdd list", DateTime.Now, playersToAdd.Count);
                 int x = 0;
                 while (playersToAdd.Count < groupSize)
                 {
                     if (!playersToAdd.Contains(PlayerList.Playerlist[x]) && PlayerList.Playerlist[x].IsActive)
                     {
                         playersToAdd.Add(PlayerList.Playerlist[x]);
-                        Console.WriteLine($"{DateTime.Now} => [DEBUGGING] : New - Fill section: {PlayerList.Playerlist[x].GuildUser.Username} added to ToAdd list");
+                        Log.Debug("{DateTimeNow} => [DEBUGGING] : New - Fill section: {PlayerList.Playerlist[x].GuildUser.Username} added to ToAdd list", 
+                            DateTime.Now, PlayerList.Playerlist[x].GuildUser.Username);
                     }
                     x++;
                 }
@@ -1038,10 +1037,17 @@ namespace CustomsQueueBot.Core.Commands
 
             foreach (Player player in playersToAdd) // Move the players to the bottom of the list
             {
-                PlayerList.Playerlist.Remove(player);
-                PlayerList.Playerlist.Add(player);
+                try 
+                {
+                    PlayerList.Playerlist.Remove(player);
+                    PlayerList.Playerlist.Add(player);
+                }
+                catch (Exception e)
+                {
+                    Log.Error("{DateTime} => [DEBUG] New - failed to remove/add player {player} to playerlist. Exception: {e}",
+                        DateTime.Now, e.Message);
+                }
             }
-
 
 
             await Context.Channel.TriggerTypingAsync();
@@ -1213,11 +1219,12 @@ namespace CustomsQueueBot.Core.Commands
                         {
                             await Caches.Messages.ReactionMessage.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.ReactionMessage);  // Delete the message with reacts
 
-                            }
+                        }
+                   
                         if (!(Caches.Messages.PlayerListEmbed is null))
                         {
                             await Caches.Messages.PlayerListEmbed.DeleteAsync();      //Context.Channel.DeleteMessageAsync(Caches.Messages.PlayerListEmbed);
-                            }
+                        }
 
                         if (!(Caches.Messages.ListCommandMessage is null))
                         {
@@ -1265,7 +1272,7 @@ namespace CustomsQueueBot.Core.Commands
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Log.Debug("{time} :: Failed to delete all messages. Exception: {e}", DateTime.Now, e.Message);
             }
         }
     }
