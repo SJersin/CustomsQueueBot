@@ -137,14 +137,10 @@ namespace CustomsQueueBot.Core.Commands
                     }
                 }
                   
-                Console.WriteLine("DEBUG: Writing string response");
                 string response = $"You have removed yourself from the queue {user.Username}";
 
-                Console.WriteLine("DEBUG: SendMessageAsync");
                 await Context.Channel.SendMessageAsync(response);
-                Console.WriteLine("DEBUG: Success.");
                 await UpdateMethods.Update.PlayerList();
-                Console.WriteLine("DEBUG: Player List updated");
             }
             else
             {

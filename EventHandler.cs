@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -118,7 +117,7 @@ namespace CustomsQueueBot
                         }
                         catch (Exception e)
                         {
-                            Log.Debug(e.Message);
+                            Log.Information(e.Message);
                         }
 
                         if (!exists && user.Roles.Any(r => r.Name == Config.bot.Role))    // If no user is found and user has "customs" role, add user to playerlist
@@ -136,7 +135,7 @@ namespace CustomsQueueBot
                 catch (Exception e)
                 {
                     Console.WriteLine();
-                    Log.Error(e.Message);
+                    Log.Information("Error reading reaction from user {u}.\nException: {e}\n", reaction.User.Value.Username, e.Message);
                     Console.WriteLine();
                 }
             #endregion
@@ -179,7 +178,7 @@ namespace CustomsQueueBot
                 }
                 catch (Exception e)
                 {
-                    Log.Debug("{datetime} ReactionRemoved method in EventHandler:\n"
+                    Log.Information("{datetime} ReactionRemoved method in EventHandler:\n"
                         + "Exception: {e}", DateTime.Now, e.Message);
                 }
                 await UpdateMethods.Update.PlayerList();

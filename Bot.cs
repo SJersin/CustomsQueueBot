@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks; //Run Async tasks
 using Discord;
 using Discord.Commands; //Discord command handler
@@ -52,16 +50,16 @@ namespace CustomsQueueBot
             Client.Log += Client_Log;
             if (string.IsNullOrWhiteSpace(Config.bot.Token))    // Check for bot's token. Same thing as: if (Config.bot.token == "" || Config.bot.token == null) return;
             {
-                Log.Error("\n--------**** ERROR ****--------");
-                Log.Error("The bot's token is not set. Set the token in the config file located in the \\Resources\\ directory.");
+                Log.Information("\n--------**** ERROR ****--------");
+                Log.Information("The bot's token is not set. Set the token in the config file located in the \\Resources\\ directory.");
                 Console.Read();
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Config.bot.Prefix))    // Check for bot's prefix.
             {
-                Log.Debug("\n--------**** ERROR ****--------");
-                Log.Debug("The bot's prefix is not set. Set the prefix in the config file located in the \\Resources\\ directory.");
+                Log.Information("\n--------**** ERROR ****--------");
+                Log.Information("The bot's prefix is not set. Set the prefix in the config file located in the \\Resources\\ directory.");
                 Console.Read();
                 return;
             }
@@ -82,9 +80,12 @@ namespace CustomsQueueBot
 
             // Filter out annoying repetative messages.
             if (message.Message != "Received Dispatch (PRESENCE_UPDATE)")
-                if(message.Message != "Received Dispatch (TYPING_START)")
-                    if(message.Message != "Received Dispatch (MESSAGE_CREATE)")
-                        Console.WriteLine($"{DateTime.Now} => [{message.Source}] : {message.Message}");
+                if (message.Message != "Received Dispatch (TYPING_START)")
+                    if (message.Message != "Received Dispatch (MESSAGE_CREATE)")    // Too lazy for &&
+                        if (message.Message != "Received HeartbeatAck")
+                            if (message.Message != "Sent Heartbeat")
+                                Console.WriteLine($"{DateTime.Now} => [{message.Source}] : {message.Message}");
+            
             return Task.CompletedTask;
         }
 

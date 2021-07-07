@@ -8,7 +8,7 @@ namespace CustomsQueueBot
 {
     public class Version
     {
-        public const string GetVersion  = "0.8.4";
+        public const string GetVersion  = "0.8.4.3";
     }
 
     

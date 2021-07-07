@@ -34,7 +34,6 @@ namespace CustomsQueueBot
 
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(configuration)
-                .WriteTo.File($"Log_{DateTime.Now}")
                 .CreateLogger();
 
             try 

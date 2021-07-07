@@ -6,6 +6,7 @@ using Discord.Commands;
 using System.Threading.Tasks;
 using System.Linq;
 using Discord.WebSocket;
+using Serilog;
 
 /*
  * 0.8.3
@@ -596,8 +597,8 @@ namespace CustomsQueueBot.Core.Commands
             }
             catch (Exception e)
             {
-                Console.WriteLine("Recall embed failed to send.");
-                Console.WriteLine(e.Message);
+                Log.Information("Recall embed failed to send.");
+                Log.Information(e.Message);
 
             }
             

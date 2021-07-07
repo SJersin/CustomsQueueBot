@@ -9,8 +9,6 @@
  *    -Group size integer for default number of players
  *
  */
-using System;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;  //Using Json files
 

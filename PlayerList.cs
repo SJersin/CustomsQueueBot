@@ -2,7 +2,7 @@
 
 namespace CustomsQueueBot
 {
-    // Global Player class List 
+    // Global Player class Lists 
     public class PlayerList
     {
         public static List<Player> Playerlist { get; set; } = new List<Player>();
